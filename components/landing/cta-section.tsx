@@ -93,11 +93,9 @@ const Card = (card: { icon: JSX.Element; bg: JSX.Element }) => {
       initial={{ opacity: 0 }}
       animate={controls}
       className={cn(
-        "relative size-20 cursor-pointer overflow-hidden rounded-2xl border p-4",
-        // light styles
-        "bg-white [box-shadow:0_0_0_1px_rgba(0,0,0,.03),0_2px_4px_rgba(0,0,0,.05),0_12px_24px_rgba(0,0,0,.05)]",
-        // dark styles
-        "transform-gpu dark:bg-transparent dark:[border:1px_solid_rgba(255,255,255,.1)] dark:[box-shadow:0_-20px_80px_-20px_#ffffff1f_inset]"
+        "relative size-20 cursor-pointer overflow-hidden rounded-2xl p-4",
+        // THEMILION glass tile: white/5 surface, white/10 border, inner glow
+        "card-glass transform-gpu"
       )}
     >
       {card.icon}
@@ -161,7 +159,7 @@ export default function CallToActionSection() {
               ))}
             </Marquee>
             <div className="absolute z-10">
-              <div className="mx-auto size-24 rounded-[2rem] border bg-background/10 p-3 shadow-2xl backdrop-blur-md dark:bg-background/10 lg:size-32">
+              <div className="card-glass mx-auto size-24 rounded-[2rem] p-3 shadow-2xl lg:size-32">
                 <HeartHandshake className="mx-auto size-16 text-foreground dark:text-foreground lg:size-24" />
               </div>
               <div className="z-10 mt-4 flex flex-col items-center text-center text-primary">

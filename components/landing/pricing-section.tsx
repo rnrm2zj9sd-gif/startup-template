@@ -127,9 +127,9 @@ export default function PricingSection() {
             <div
               key={price.id}
               className={cn(
-                "relative flex max-w-[400px] flex-col gap-8 rounded-2xl border p-4 text-black dark:text-white overflow-hidden",
+                "card-glass relative flex max-w-[400px] flex-col gap-8 p-4 text-black dark:text-white overflow-hidden",
                 {
-                  "border-2 border-[var(--color-one)] dark:border-[var(--color-one)]":
+                  "border-brand-blue/60 shadow-[0_0_48px_-12px_var(--color-one)]":
                     price.isMostPopular,
                 }
               )}
@@ -194,7 +194,7 @@ export default function PricingSection() {
                 )}
               </Button>
 
-              <hr className="m-0 h-px w-full border-none bg-gradient-to-r from-neutral-200/0 via-neutral-500/30 to-neutral-200/0" />
+              <hr className="m-0 h-px w-full border-none bg-gradient-to-r from-white/0 via-white/15 to-white/0" />
               {price.features && price.features.length > 0 && (
                 <ul className="flex flex-col gap-2 font-normal">
                   {price.features.map((feature: any, idx: any) => (
@@ -202,7 +202,7 @@ export default function PricingSection() {
                       key={idx}
                       className="flex items-center gap-3 text-xs font-medium text-black dark:text-white"
                     >
-                      <CheckIcon className="h-5 w-5 shrink-0 rounded-full bg-green-400 p-[2px] text-black dark:text-white" />
+                      <CheckIcon className="h-5 w-5 shrink-0 rounded-full bg-brand-blue p-[2px] text-black dark:text-background" />
                       <span className="flex">{feature}</span>
                     </li>
                   ))}
