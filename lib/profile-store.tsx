@@ -1,7 +1,8 @@
 "use client";
 
-import { demoUser } from "@/config/user";
-import type { UserProfile } from "@/types/player";
+import { emptyProfile } from "@/config/user";
+import { createClient } from "@/lib/supabase/client";
+import type { Gender, UserProfile } from "@/types/player";
 import {
   createContext,
   useCallback,
@@ -12,54 +13,101 @@ import {
   type ReactNode,
 } from "react";
 
-const STORAGE_KEY = "themilion:profile";
-
 interface ProfileContextValue {
   profile: UserProfile;
-  /** Vrai une fois le profil relu depuis le navigateur. */
+  userId: string | null;
+  /** Vrai une fois le compte Supabase relu. */
   hydrated: boolean;
   updateProfile: (patch: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => void;
 }
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
 
+function genderKey(userId: string) {
+  return `themilion:gender:${userId}`;
+}
+
+function readGender(userId: string): Gender | null {
+  try {
+    const raw = window.localStorage.getItem(genderKey(userId));
+    if (raw === "male" || raw === "female") return raw;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 /**
- * Profil utilisateur côté client.
- * Point de départ : `demoUser` ; les modifications (nom, personnage) sont
- * persistées en localStorage en attendant un vrai backend.
+ * Identité du dashboard = compte connecté (`profiles`), sinon état vide.
+ * Plus de profil démo Willys.
  */
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<UserProfile>(demoUser);
+  const [profile, setProfile] = useState<UserProfile>(emptyProfile);
+  const [userId, setUserId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<UserProfile>;
-        setProfile({ ...demoUser, ...saved });
+    let cancelled = false;
+
+    async function load() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (cancelled) return;
+
+      if (!user) {
+        setUserId(null);
+        setProfile(emptyProfile);
+        setHydrated(true);
+        return;
       }
-    } catch {
-      // Stockage indisponible ou corrompu : on garde le profil de démo.
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("pseudo, onboarding_done")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      const pseudo = (data?.pseudo ?? "").trim();
+      const fallback = user.email?.split("@")[0] ?? "";
+
+      setUserId(user.id);
+      setProfile({
+        ...emptyProfile,
+        name: pseudo || fallback,
+        gender: readGender(user.id) ?? "male",
+        onboardingDone: Boolean(data?.onboarding_done),
+      });
+      setHydrated(true);
     }
-    setHydrated(true);
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const updateProfile = useCallback((patch: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => {
     setProfile((prev) => {
       const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignoré : la mise à jour reste valable pour la session.
+      if (userId && next.gender !== prev.gender) {
+        try {
+          window.localStorage.setItem(genderKey(userId), next.gender);
+        } catch {
+          // ignore
+        }
       }
       return next;
     });
-  }, []);
+  }, [userId]);
 
   const value = useMemo(
-    () => ({ profile, hydrated, updateProfile }),
-    [profile, hydrated, updateProfile]
+    () => ({ profile, userId, hydrated, updateProfile }),
+    [profile, userId, hydrated, updateProfile],
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

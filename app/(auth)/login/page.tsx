@@ -1,3 +1,4 @@
+import { DevPasswordLogin } from "@/components/auth/dev-password-login";
 import { LoginForm } from "@/components/auth/login-form";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,14 @@ export default async function LoginPage({
         ) : null}
 
         <LoginForm nextPath={nextPath} />
+
+        {process.env.NODE_ENV === "development" ? <DevPasswordLogin nextPath={nextPath} /> : null}
+
+        <p className="text-center text-sm text-muted-foreground">
+          <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">
+            Pas encore de compte ? Enregistrer un mot de passe
+          </Link>
+        </p>
       </div>
     </div>
   );

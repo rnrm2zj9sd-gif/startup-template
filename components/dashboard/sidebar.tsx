@@ -72,11 +72,13 @@ export function Sidebar({ compact = false }: SidebarProps) {
       >
         <CharacterAvatar gender={profile.gender} size={64} />
         <span className="mt-3 block truncate text-sm font-semibold tracking-[0.12em]">
-          {profile.name.toUpperCase()}
+          {profile.name ? profile.name.toUpperCase() : "—"}
         </span>
-        <span className="mt-0.5 text-[11px] tracking-[0.2em] text-muted-foreground">
-          {profile.className}
-        </span>
+        {profile.className ? (
+          <span className="mt-0.5 text-[11px] tracking-[0.2em] text-muted-foreground">
+            {profile.className}
+          </span>
+        ) : null}
         <span className="mt-2 inline-flex w-fit items-center rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 font-mono text-[11px] text-brand-gold">
           RANG {profile.rank}
         </span>

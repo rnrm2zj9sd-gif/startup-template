@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/lib/profile-store";
+import { createClient } from "@/lib/supabase/client";
 import type { Gender } from "@/types/player";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 export function SettingsForm() {
-  const { profile, hydrated, updateProfile } = useProfile();
+  const { profile, userId, hydrated, updateProfile } = useProfile();
   const [name, setName] = useState(profile.name);
   const [gender, setGender] = useState<Gender>(profile.gender);
 
@@ -26,7 +27,7 @@ export function SettingsForm() {
 
   const dirty = name.trim() !== profile.name || gender !== profile.gender;
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
@@ -34,6 +35,13 @@ export function SettingsForm() {
       return;
     }
     updateProfile({ name: trimmed, gender });
+    if (userId) {
+      const { error } = await createClient().from("profiles").update({ pseudo: trimmed }).eq("id", userId);
+      if (error) {
+        toast.error("Le prénom n’a pas été enregistré sur le compte.");
+        return;
+      }
+    }
     toast.success("Profil mis à jour.");
   }
 

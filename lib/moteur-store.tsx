@@ -1,6 +1,6 @@
 "use client";
 
-import { demoMoteurProfil } from "@/config/moteur-demo";
+import { emptyMoteurProfil } from "@/config/moteur-demo";
 import {
   CATALOGUE,
   enregistrerResultat,
@@ -51,7 +51,7 @@ const MoteurContext = createContext<MoteurContextValue | null>(null);
  */
 export function MoteurProvider({ children }: { children: ReactNode }) {
   const { updateProfile } = useProfile();
-  const [profil, setProfil] = useState<Profil>(demoMoteurProfil);
+  const [profil, setProfil] = useState<Profil>(emptyMoteurProfil);
   const [etat, setEtat] = useState<EtatUtilisateur>(etatInitial);
   const [meilleureChaine, setMeilleureChaine] = useState(0);
   const [hydrated, setHydrated] = useState(false);
@@ -62,7 +62,9 @@ export function MoteurProvider({ children }: { children: ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Partial<MoteurPersiste>;
-        if (saved.profil) setProfil({ ...demoMoteurProfil, ...saved.profil });
+        if (saved.profil && saved.profil.userId !== "demo-willy") {
+          setProfil({ ...emptyMoteurProfil, ...saved.profil });
+        }
         if (saved.etat) setEtat({ ...etatInitial(), ...saved.etat });
         if (typeof saved.meilleureChaine === "number") setMeilleureChaine(saved.meilleureChaine);
       }

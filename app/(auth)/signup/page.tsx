@@ -25,7 +25,7 @@ export default function SignUpPage() {
         <div className="flex flex-col gap-2 text-center">
           <p className="text-xs tracking-[0.4em] text-brand-purple">SYSTEM ONLINE</p>
           <h1 className="text-2xl font-semibold tracking-tight">Crée ton personnage</h1>
-          <p className="text-sm text-muted-foreground">Ensuite, on construit ton contrat.</p>
+          <p className="text-sm text-muted-foreground">Choisis un mot de passe. Ensuite, on construit ton contrat.</p>
         </div>
 
         <SignupForm />

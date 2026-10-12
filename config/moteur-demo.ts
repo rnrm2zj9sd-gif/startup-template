@@ -3,7 +3,15 @@ import type { Profil } from "@/lib/moteur";
 
 export { catalogPersoDemo };
 
-/** Profil de démo : même contrat que `exemple-sortie_1.txt`, plus la couche perso. */
+/** Contrat vide : pas de missions inventées tant que le compte n’a pas d’initiation. */
+export const emptyMoteurProfil: Profil = {
+  userId: "",
+  materiel: ["aucun"],
+  budgetMinutesJour: 45,
+  choix: [],
+};
+
+/** Jeu d’essai pour `test.ts` / scripts — jamais chargé dans le dashboard. */
 export const demoMoteurProfil: Profil = {
   userId: "demo-willy",
   materiel: ["aucun", "papier_stylo", "telephone"],

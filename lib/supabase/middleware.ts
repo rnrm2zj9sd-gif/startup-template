@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/auth/callback", "/api/health"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/auth/callback", "/api/health"]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
   const { data: profile } = await supabase.from("profiles").select("onboarding_done").eq("id", user.id).maybeSingle();
   const onboardingDone = Boolean(profile?.onboarding_done);
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/signup") {
     const dest = request.nextUrl.clone();
     dest.pathname = onboardingDone ? "/dashboard" : "/onboarding";
     dest.search = "";

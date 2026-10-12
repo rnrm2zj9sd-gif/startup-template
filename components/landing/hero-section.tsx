@@ -3,7 +3,7 @@
 import TextShimmer from "@/components/magicui/text-shimmer";
 import { SystemBlock } from "@/components/system/system-block";
 import { Button } from "@/components/ui/button";
-import { demoUser } from "@/config/user";
+import { landingPreview } from "@/config/user";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { useInView } from "framer-motion";
 import Link from "next/link";
@@ -51,7 +51,7 @@ export default function HeroSection() {
           inView ? "before:animate-image-glow" : ""
         }`}
       >
-        <SystemBlock player={demoUser} />
+        <SystemBlock player={landingPreview} />
       </div>
     </section>
   );
