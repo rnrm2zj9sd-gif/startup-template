@@ -25,6 +25,8 @@ export interface UserProfile {
   xp: number;
   /** XP nécessaire pour passer au niveau suivant. */
   xpNext: number;
+  power?: number;
+  missionsValidees?: number;
   onboardingDone: boolean;
   initiation?: InitiationProfile;
 }

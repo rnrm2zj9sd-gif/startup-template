@@ -1,4 +1,5 @@
 import type { Attribute, AttributeKey, DayStatus, StreakDay } from "@/config/dashboard";
+import { jourLocal } from "@/lib/temps";
 import { Brain, Dumbbell, Users, Wallet } from "lucide-react";
 import { CATALOGUE, lundiDe, type Domaine, type EtatUtilisateur, type JourPlan, type Materiel, type Ressenti, type SeancePrevue } from ".";
 
@@ -44,12 +45,10 @@ const ATTRIBUT_META: Record<AttributeKey, { label: string; icon: Attribute["icon
   social: { label: "Social", icon: Users },
 };
 
-/** Date locale YYYY-MM-DD (le moteur lit la date, pas le fuseau). */
-export function aujourdHuiISO(now = new Date()): string {
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+/** Date civile YYYY-MM-DD dans le fuseau donné (défaut : fuseau du runtime). */
+export function aujourdHuiISO(now = new Date(), timezone?: string): string {
+  const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris";
+  return jourLocal(now, tz);
 }
 
 export function domaineDe(competenceId: string): Domaine | undefined {

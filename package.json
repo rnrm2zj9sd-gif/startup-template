@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npx tsx --test test.ts lib/temps.test.ts",
-    "test:lot2": "npx tsx scripts/tests/lot2-isolation.ts"
+    "test": "npx tsx --test test.ts lib/temps.test.ts lib/progression/progression.test.ts",
+    "test:lot2": "npx tsx scripts/tests/lot2-isolation.ts",
+    "test:lot3": "npx tsx scripts/tests/lot3-db.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

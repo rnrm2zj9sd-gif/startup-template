@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (!user) {
-    if (isPublicPath(pathname)) return supabaseResponse;
+    if (isPublicPath(pathname) || pathname.startsWith("/api/")) return supabaseResponse;
     const login = request.nextUrl.clone();
     login.pathname = "/login";
     const next = `${pathname}${search}`;
@@ -69,7 +69,7 @@ export async function updateSession(request: NextRequest) {
     return redirect;
   }
 
-  if (!onboardingDone && !pathname.startsWith("/onboarding") && !isPublicPath(pathname)) {
+  if (!onboardingDone && !pathname.startsWith("/onboarding") && !isPublicPath(pathname) && !pathname.startsWith("/api/")) {
     const dest = request.nextUrl.clone();
     dest.pathname = "/onboarding";
     dest.search = "";

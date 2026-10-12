@@ -25,7 +25,7 @@ function cloneChoix(choix: ChoixCompetence[]): ChoixCompetence[] {
 }
 
 export function CompetenceSettings() {
-  const { profil, updateProfil, hydrated } = useMoteur();
+  const { profil, updateProfil, appliquerContrat, hydrated } = useMoteur();
   const menu = useMemo(() => menuDeChoix(profil.catalogPerso), [profil.catalogPerso]);
   const [choix, setChoix] = useState<ChoixCompetence[]>(() => cloneChoix(profil.choix));
   const [materiel, setMateriel] = useState<Materiel[]>(profil.materiel);
@@ -68,11 +68,17 @@ export function CompetenceSettings() {
     setMateriel((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const nextMateriel = materiel.includes("aucun") ? materiel : (["aucun", ...materiel] as Materiel[]);
-    updateProfil({ choix, materiel: [...new Set(nextMateriel)], budgetMinutesJour: budget });
-    toast.success("Tes compétences sont à jour.");
+    const next = { ...profil, choix, materiel: [...new Set(nextMateriel)], budgetMinutesJour: budget };
+    updateProfil(next);
+    try {
+      await appliquerContrat(next);
+      toast.success("Tes compétences sont à jour.");
+    } catch {
+      toast.error("Enregistrement impossible. Réessaie.");
+    }
   }
 
   return (

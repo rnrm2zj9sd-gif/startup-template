@@ -152,7 +152,7 @@ export function InitiationFlow() {
     if (!state.primary || !state.time) return;
     try {
       const profil = profilDepuisInitiation(state, profile.name.toLowerCase() || "joueur");
-      appliquerContrat(profil, etatInitial());
+      await appliquerContrat(profil, etatInitial());
       updateProfile({
         onboardingDone: true,
         initiation: {

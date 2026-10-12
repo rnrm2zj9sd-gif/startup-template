@@ -11,6 +11,7 @@ export function FirstMissionCard() {
   const { etat } = useMoteur();
   const init = profile.initiation;
   if (!profile.onboardingDone || !init) return null;
+  if ((profile.missionsValidees ?? 0) > 0) return null;
   if (etat.historique.some((s) => s.ressenti !== "pas_fait")) return null;
   const recap = recapInitiation({
     primary: init.primary,

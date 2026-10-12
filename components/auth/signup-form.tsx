@@ -4,6 +4,7 @@ import { CharacterPicker } from "@/components/system/character-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { emptyProfile } from "@/config/user";
 import { messageInscription } from "@/lib/auth/errors";
 import { useProfile } from "@/lib/profile-store";
 import { createClient } from "@/lib/supabase/client";
@@ -70,7 +71,7 @@ export function SignupForm() {
       className: "",
       rank: "E",
       xp: 0,
-      xpNext: 1600,
+      xpNext: emptyProfile.xpNext,
       onboardingDone: false,
       initiation: undefined,
     });

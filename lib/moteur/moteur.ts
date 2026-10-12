@@ -54,7 +54,10 @@ function rng(seed: string): () => number {
 export function ajouterJours(dateISO: string, n: number): string {
   const d = new Date(dateISO + "T00:00:00Z");
   d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function ecartJours(a: string, b: string): number {

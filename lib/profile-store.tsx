@@ -75,12 +75,43 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const pseudo = (data?.pseudo ?? "").trim();
       const fallback = user.email?.split("@")[0] ?? "";
 
+      let progression = {
+        level: emptyProfile.level,
+        className: emptyProfile.className,
+        rank: emptyProfile.rank,
+        xp: emptyProfile.xp,
+        xpNext: emptyProfile.xpNext,
+        power: 0,
+        missionsValidees: 0,
+      };
+
+      try {
+        const res = await fetch("/api/me/progression");
+        if (res.ok) {
+          const snap = await res.json();
+          progression = {
+            level: snap.niveau,
+            className: snap.classe,
+            rank: snap.rang,
+            xp: snap.xpDansNiveau,
+            xpNext: snap.xpPourSuivant,
+            power: snap.power,
+            missionsValidees: snap.missionsValidees,
+          };
+        }
+      } catch {
+        // Snapshot indisponible : on garde les dérivés vides.
+      }
+
+      if (cancelled) return;
+
       setUserId(user.id);
       setProfile({
         ...emptyProfile,
         name: pseudo || fallback,
         gender: readGender(user.id) ?? "male",
         onboardingDone: Boolean(data?.onboarding_done),
+        ...progression,
       });
       setHydrated(true);
     }

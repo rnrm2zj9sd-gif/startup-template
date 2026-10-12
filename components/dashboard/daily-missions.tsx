@@ -1,16 +1,17 @@
 "use client";
 
-import { seanceTerminee } from "@/lib/moteur/app";
-import { useMoteurPlan } from "@/lib/moteur-store";
+import { useMissionsJour } from "@/lib/progression/use-missions";
+import { useProgression } from "@/lib/progression/use-progression";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export function DailyMissions({ className }: { className?: string }) {
-  const { etat, jour, terminerSeance, hydrated } = useMoteurPlan();
-  const seances = jour?.seances ?? [];
-  const doneCount = seances.filter((s) => seanceTerminee(etat, s)).length;
-  const total = seances.length;
+  const { missions, loading, valider } = useMissionsJour();
+  const { reload } = useProgression();
+  const doneCount = missions.filter((m) => m.statut === "terminee").length;
+  const total = missions.length;
   const progress = total ? Math.round((doneCount / total) * 100) : 0;
 
   return (
@@ -50,7 +51,7 @@ export function DailyMissions({ className }: { className?: string }) {
         )}
       </header>
 
-      {!hydrated ? (
+      {loading ? (
         <p className="px-5 py-6 text-sm text-muted-foreground">Chargement des missions…</p>
       ) : total === 0 ? (
         <p className="px-5 py-6 text-sm text-muted-foreground">
@@ -62,18 +63,26 @@ export function DailyMissions({ className }: { className?: string }) {
         </p>
       ) : (
         <ul>
-          {seances.map((seance) => {
-            const done = seanceTerminee(etat, seance);
-            const titre = `${seance.competence} : ${seance.focusNoms.join(" + ")}`;
+          {missions.map((mission) => {
+            const done = mission.statut === "terminee";
             return (
-              <li key={`${seance.date}-${seance.competenceId}`} className="border-b border-border last:border-b-0">
+              <li key={mission.id} className="border-b border-border last:border-b-0">
                 <label className="flex cursor-pointer items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
                   <input
                     type="checkbox"
                     checked={done}
                     disabled={done}
                     onChange={() => {
-                      if (!done) terminerSeance(seance, "bien");
+                      if (done) return;
+                      void valider(mission.id, "bien")
+                        .then((r) => {
+                          void reload();
+                          if (r.plafondMessage) toast.message(r.plafondMessage);
+                          else toast.success(`+${r.xp} XP`);
+                        })
+                        .catch((err: unknown) => {
+                          toast.error(err instanceof Error ? err.message : "Validation impossible");
+                        });
                     }}
                     className="peer sr-only"
                   />
@@ -83,27 +92,27 @@ export function DailyMissions({ className }: { className?: string }) {
                       "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand-purple/60",
                       done
                         ? "border-brand-purple bg-brand-purple text-white"
-                        : "border-border bg-transparent"
+                        : "border-border bg-transparent",
                     )}
                   >
                     {done && <Check className="size-3" strokeWidth={3} />}
                   </span>
 
                   <span className={cn("min-w-0 flex-1 truncate text-sm", done ? "text-muted-foreground" : "text-foreground")}>
-                    {titre}
+                    {mission.titre}
                   </span>
 
                   <span className="hidden w-20 shrink-0 font-mono text-xs tabular-nums text-muted-foreground sm:block">
-                    {seance.minutesTotal} min
+                    {mission.duree_min} min
                   </span>
 
                   <span
                     className={cn(
                       "w-16 shrink-0 text-right font-mono text-sm tabular-nums",
-                      done ? "text-muted-foreground" : "text-brand-gold"
+                      done ? "text-muted-foreground" : "text-brand-gold",
                     )}
                   >
-                    +{seance.xpEstime} XP
+                    +{mission.xp_prevu} XP
                   </span>
                 </label>
               </li>

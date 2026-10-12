@@ -1,15 +1,22 @@
 "use client";
 
-import { semaineSerie } from "@/lib/moteur/app";
-import { useMoteurPlan } from "@/lib/moteur-store";
+import { useProgression } from "@/lib/progression/use-progression";
 import { cn } from "@/lib/utils";
 import { Activity, Check } from "lucide-react";
 
 export function StreakCard({ className }: { className?: string }) {
-  const { etat, meilleureChaine, semaine, today, hydrated } = useMoteurPlan();
-  const days = hydrated ? etat.chaineJours : 0;
-  const best = hydrated ? Math.max(meilleureChaine, etat.chaineJours) : 0;
-  const week = hydrated ? semaineSerie(semaine, etat, today) : [];
+  const { data, loading } = useProgression();
+  const days = data?.chaineJours ?? 0;
+  const best = days;
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const week = ["L", "M", "M", "J", "V", "S", "D"].map((label, i) => ({
+    label,
+    status: (i === todayIdx ? "today" : i < todayIdx ? "done" : "upcoming") as
+      | "done"
+      | "today"
+      | "missed"
+      | "upcoming",
+  }));
 
   return (
     <section
@@ -34,7 +41,12 @@ export function StreakCard({ className }: { className?: string }) {
         {best > 1 ? "jours" : "jour"}
       </p>
 
-      <ol className="mt-6 grid grid-cols-7 gap-1" aria-label="Semaine en cours">
+      <p className="mt-6 text-xs text-muted-foreground">
+        Indice de discipline :{" "}
+        <span className="font-mono tabular-nums text-foreground/80">{loading ? "—" : data?.discipline ?? 0}</span>
+      </p>
+
+      <ol className="mt-4 grid grid-cols-7 gap-1" aria-label="Semaine en cours">
         {week.map((day, i) => (
           <li key={i} className="flex flex-col items-center gap-1.5">
             <span
