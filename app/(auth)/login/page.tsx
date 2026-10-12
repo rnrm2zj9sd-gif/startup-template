@@ -1,47 +1,45 @@
+import { LoginForm } from "@/components/auth/login-form";
 import { buttonVariants } from "@/components/ui/button";
-import { UserAuthForm } from "@/components/user-auth-form";
 import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Login | Magic UI",
-  description: "Login to your account",
+  title: "Connexion — THEMILION SYSTEM",
+  description: "Entre avec un lien magique envoyé sur ton e-mail.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const params = await searchParams;
+  const nextPath = params.next?.startsWith("/") && !params.next.startsWith("//") ? params.next : "/dashboard";
+
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-16">
       <Link
         href="/"
-        className={cn(
-          buttonVariants({ variant: "ghost" }),
-          "absolute left-4 top-4 md:left-8 md:top-8"
-        )}
+        className={cn(buttonVariants({ variant: "ghost" }), "absolute left-4 top-4 md:left-8 md:top-8")}
       >
-        <>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back
-        </>
+        <ChevronLeft className="mr-2 size-4" aria-hidden />
+        Retour
       </Link>
-      <div className="mx-auto flex w-full flex-col justify-center gap-6 sm:w-[350px]">
+
+      <div className="mx-auto flex w-full max-w-md flex-col gap-8 rounded-2xl border border-border bg-card p-6 md:p-8">
         <div className="flex flex-col gap-2 text-center">
-          {/* <Icons.logo className="mx-auto h-6 w-6" /> */}
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back
-          </h1>
-          <p className="text-sm text-muted-foreground">Login to your account</p>
+          <p className="text-xs tracking-[0.3em] text-brand-purple">SYSTEM ONLINE</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Connexion</h1>
+          <p className="text-sm text-muted-foreground">Entre ton e-mail. On t&apos;envoie un lien, sans mot de passe.</p>
         </div>
-        <UserAuthForm />
-        <p className="px-8 text-center text-sm text-muted-foreground">
-          <Link
-            href="/register"
-            className="hover:text-brand underline underline-offset-4"
-          >
-            Don&apos;t have an account? Sign Up
-          </Link>
-        </p>
+
+        {params.error ? (
+          <p className="text-center text-sm text-destructive">Lien invalide ou expiré. Demande-en un nouveau.</p>
+        ) : null}
+
+        <LoginForm nextPath={nextPath} />
       </div>
     </div>
   );

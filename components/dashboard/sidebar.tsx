@@ -1,5 +1,6 @@
 "use client";
 
+import { LogoutButton } from "@/components/auth/logout-button";
 import { CharacterAvatar } from "@/components/system/character-avatar";
 import { dashboardNav } from "@/config/dashboard";
 import { useProfile } from "@/lib/profile-store";
@@ -60,6 +61,10 @@ export function Sidebar({ compact = false }: SidebarProps) {
           })}
         </ul>
       </nav>
+
+      <div className="px-5 pb-2">
+        <LogoutButton />
+      </div>
 
       <Link
         href="/dashboard/parametres"

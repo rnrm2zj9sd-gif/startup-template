@@ -1,3 +1,4 @@
+import { TimezoneSync } from "@/components/auth/timezone-sync";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { MoteurProvider } from "@/lib/moteur-store";
@@ -45,7 +46,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ProfileProvider>
-            <MoteurProvider>{children}</MoteurProvider>
+            <MoteurProvider>
+              <TimezoneSync />
+              {children}
+            </MoteurProvider>
           </ProfileProvider>
           <Toaster />
         </ThemeProvider>

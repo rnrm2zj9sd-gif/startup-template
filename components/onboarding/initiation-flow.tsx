@@ -24,6 +24,7 @@ import {
 } from "@/lib/onboarding";
 import { useMoteur } from "@/lib/moteur-store";
 import { useProfile } from "@/lib/profile-store";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { etatInitial } from "@/lib/moteur";
 import { ChevronLeft } from "lucide-react";
@@ -147,7 +148,7 @@ export function InitiationFlow() {
     if (i > 0) setStep(STEPS[i - 1]);
   }
 
-  function finish() {
+  async function finish() {
     if (!state.primary || !state.time) return;
     try {
       const profil = profilDepuisInitiation(state, profile.name.toLowerCase() || "joueur");
@@ -163,6 +164,13 @@ export function InitiationFlow() {
           days: state.days,
         },
       });
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("profiles").update({ onboarding_done: true }).eq("id", user.id);
+      }
       toast.success("SYSTEM ONLINE", { description: "Ta première mission t'attend." });
       router.push("/dashboard");
     } catch {
