@@ -1,0 +1,54 @@
+---
+description: Règles de design THEMILION SYSTEM (palette bleu nuit, typographie, cartes, animations, accessibilité)
+alwaysApply: true
+---
+
+# THEMILION SYSTEM — règles de design
+
+Interface « System » d'un RPG de la vraie vie : sombre, sci-fi, élégante, jamais kitsch.
+Tous les tokens vivent dans `app/globals.css` ; ne pas écrire de couleurs en dur dans les composants.
+
+## Couleurs : bleu nuit
+
+| Rôle | Valeur | Token Tailwind |
+|------|--------|----------------|
+| Fond principal | `#04060B` | `bg-background` |
+| Fond secondaire (sidebar, zones) | `#080A11` | `bg-surface` |
+| Cartes | `#0B0E18` | `bg-card` |
+| Panneaux mis en avant | `#10131F` | `bg-panel` |
+| Bordures | `rgba(255,255,255,0.08)` | `border-border` |
+| Violet (accent du dashboard) | `#8B5CF6` | `brand-purple` |
+| Bleu (CTA landing, `primary`) | `#00B4FF` | `brand-blue` / `primary` |
+| Or (XP, rangs) | `#FBBF24` | `brand-gold` |
+| Texte principal | `#FAFAFA` | `text-foreground` |
+| Texte secondaire | `#94A3B8` | `text-muted-foreground` |
+
+- Mode sombre unique et forcé (`forcedTheme="dark"`), aucun bouton clair/sombre.
+- Un seul accent fort par bloc (violet) ; l'or est réservé à l'XP et aux rangs.
+
+## Typographie
+
+- Police `Geist` (sans) et `Geist Mono` pour les chiffres (niveau, XP) : `font-mono tabular-nums`.
+- Libellés System en capitales espacées : `text-xs tracking-[0.3em]` (ex. `LEVEL`, `SYSTEM ONLINE`).
+- Textes en français, tutoiement, phrases courtes.
+
+## Cartes et bordures
+
+- Cartes : `bg-card border border-border rounded-2xl`, padding `p-5` ou `p-6`. Pas d'ombre portée.
+- Panneau mis en avant (bloc Système) : `bg-panel`, halo violet doux derrière le sujet.
+- Mini-barres et jauges : `h-1.5`/`h-2`, `rounded-full`, piste `bg-white/5`.
+
+## Personnage
+
+- Toujours via `<SystemCharacter gender size />` (`/character/male.png` ou `/character/female.png`, `next/image`, fond transparent).
+- Le genre vient du profil utilisateur (`gender: "male" | "female"`), choisi à l'inscription, modifiable dans Paramètres.
+
+## Animations
+
+- Lentes et discrètes : halo 5 s, respiration 5 s, socle 18 s, barre d'XP ≈ 1,4 s.
+- Toute animation en boucle passe par `motion-safe:` (CSS) ou `useReducedMotion()` (motion/react).
+- Avec `prefers-reduced-motion`, on garde seulement de courts fondus et les valeurs finales.
+
+## Hors périmètre V1
+
+Pas de pièces, gemmes, énergie, classement, inventaire, journal système ni analyse du système.

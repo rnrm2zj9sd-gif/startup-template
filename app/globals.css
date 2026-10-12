@@ -46,6 +46,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-glow: var(--glow);
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
   --color-brand-blue: var(--color-one);
   --color-brand-purple: var(--color-two);
   --color-brand-gold: var(--color-three);
@@ -59,6 +61,58 @@
   --animate-shimmer: shimmer 8s infinite;
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+
+  /* Animations du bloc Système (toujours utilisées via motion-safe:) */
+  --animate-halo: halo-pulse 5s ease-in-out infinite;
+  --animate-glow: glow-pulse 5s ease-in-out infinite;
+  --animate-pedestal-spin: pedestal-spin 18s linear infinite;
+  --animate-pedestal-ripple: pedestal-ripple 3.2s ease-out infinite;
+  --animate-edge-glow: edge-glow 1.8s ease-in-out infinite;
+
+  @keyframes halo-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(0.94);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+  }
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 14px var(--glow-color, var(--color-one)));
+    }
+    50% {
+      filter: drop-shadow(0 0 30px var(--glow-color, var(--color-one)));
+    }
+  }
+  @keyframes pedestal-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes pedestal-ripple {
+    0% {
+      opacity: 0.6;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.35);
+    }
+  }
+  @keyframes edge-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 6px 1px var(--color-three);
+    }
+    50% {
+      box-shadow: 0 0 16px 3px var(--color-three);
+    }
+  }
 
   @keyframes accordion-down {
     from {
@@ -145,9 +199,10 @@
 
 /* ------------------------------------------------------------------
    THEMILION SYSTEM — thème global (mode sombre unique, forcé)
-   Palette issue du System : fond nuit #020617, halo #12305c,
-   accents bleu #00b4ff / violet #a855f7 / or #fbbf24,
-   surfaces en verre (blanc 5 %) et bordures blanc 10 %.
+   Palette « bleu nuit » : fond #04060B, fond secondaire #080A11,
+   cartes #0B0E18, panneaux mis en avant #10131F, bordures blanc 8 %.
+   Accents : violet #8B5CF6 (principal), bleu #00B4FF, or #FBBF24.
+   Voir .cursor/rules/themilion-design.mdc
    ------------------------------------------------------------------ */
 :root,
 .dark {
@@ -155,12 +210,14 @@
   --radius: 0.75rem;
 
   /* Surfaces */
-  --background: oklch(13% 0.04 265); /* #020617 */
+  --background: #04060b;
+  --surface: #080a11; /* sidebar, zones secondaires */
+  --card: #0b0e18;
+  --panel: #10131f; /* panneaux mis en avant */
   --foreground: oklch(98% 0 0); /* #fafafa */
-  --glow: oklch(31% 0.08 258); /* #12305c */
-  --card: oklch(100% 0 0 / 5%); /* white/5 */
+  --glow: oklch(27% 0.07 262); /* halo haut de page, discret */
   --card-foreground: oklch(98% 0 0);
-  --popover: oklch(17% 0.035 265); /* opaque pour les menus */
+  --popover: #10131f;
   --popover-foreground: oklch(98% 0 0);
 
   /* Accents */
@@ -176,29 +233,29 @@
   --destructive-foreground: oklch(98% 0 0);
 
   /* Bordures et focus */
-  --border: oklch(100% 0 0 / 10%); /* white/10 */
-  --input: oklch(100% 0 0 / 10%);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
   --ring: oklch(72% 0.154 229);
 
-  /* Couleurs de marque (utilisées par BorderBeam, halos, pricing) */
+  /* Couleurs de marque (BorderBeam, halos, accents) */
   --color-one: oklch(72% 0.154 229); /* bleu   #00b4ff */
-  --color-two: oklch(63% 0.265 304); /* violet #a855f7 */
+  --color-two: #8b5cf6; /* violet */
   --color-three: oklch(84% 0.169 84); /* or     #fbbf24 */
 
   --chart-1: oklch(72% 0.154 229);
-  --chart-2: oklch(63% 0.265 304);
+  --chart-2: #8b5cf6;
   --chart-3: oklch(84% 0.169 84);
   --chart-4: oklch(72% 0.19 150); /* #22c55e */
   --chart-5: oklch(64% 0.237 25); /* #ef4444 */
 
-  --sidebar: oklch(15% 0.038 265);
+  --sidebar: #080a11;
   --sidebar-foreground: oklch(98% 0 0);
-  --sidebar-primary: oklch(72% 0.154 229);
-  --sidebar-primary-foreground: oklch(13% 0.04 265);
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: oklch(98% 0 0);
   --sidebar-accent: oklch(100% 0 0 / 6%);
   --sidebar-accent-foreground: oklch(98% 0 0);
-  --sidebar-border: oklch(100% 0 0 / 10%);
-  --sidebar-ring: oklch(72% 0.154 229);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #8b5cf6;
 }
 
 @layer base {

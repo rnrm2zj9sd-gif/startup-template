@@ -3,51 +3,51 @@ import Link from "next/link";
 
 const footerNavs = [
   {
-    label: "Product",
+    label: "Produit",
     items: [
       {
-        href: "/",
-        name: "Email Collection",
+        href: "#fonctionnalites",
+        name: "Fonctionnalités",
       },
       {
-        href: "/pricing",
-        name: "Pricing",
+        href: "#domaines",
+        name: "Domaines",
       },
       {
-        href: "/faq",
-        name: "FAQ",
+        href: "#waitlist",
+        name: "Liste d'attente",
       },
     ],
   },
 
   {
-    label: "Community",
+    label: "Communauté",
     items: [
       {
-        href: "/",
+        href: "#",
         name: "Discord",
       },
       {
-        href: "/",
-        name: "Twitter",
+        href: "#",
+        name: "X (Twitter)",
       },
       {
-        href: "mailto:hello@chatcollect.com",
-        name: "Email",
+        href: "mailto:contact@themilion.shop",
+        name: "E-mail",
       },
     ],
   },
   {
-    label: "Legal",
+    label: "Légal",
     items: [
       {
         href: "/terms",
-        name: "Terms",
+        name: "Conditions d'utilisation",
       },
 
       {
         href: "/privacy",
-        name: "Privacy",
+        name: "Confidentialité",
       },
     ],
   },
@@ -55,13 +55,13 @@ const footerNavs = [
 
 const footerSocials = [
   {
-    href: "",
+    href: "#",
     name: "Discord",
     icon: <DiscordLogoIcon className="h-4 w-4" />,
   },
   {
-    href: "",
-    name: "Twitter",
+    href: "#",
+    name: "X (Twitter)",
     icon: <TwitterLogoIcon className="h-4 w-4" />,
   },
 ];
@@ -72,16 +72,20 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-screen-xl xl:pb-2">
         <div className="md:flex md:justify-between px-8 p-4 py-16 sm:pb-16 gap-4">
           <div className="mb-12 flex-col flex gap-4">
-            <Link href="/" className="flex items-center gap-2">
-              <img
-                src="https://magicui.design/icon.png"
-                className="h-8 w-8 text-primary"
-              />
-              <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-                Magic UI
+            <Link href="/" className="flex items-center gap-3">
+              <span
+                aria-hidden
+                className="flex size-8 items-center justify-center rounded-lg border border-brand-blue/40 bg-brand-blue/15"
+              >
+                <span className="size-2 rounded-full bg-brand-blue shadow-[0_0_12px_var(--color-one)]" />
+              </span>
+              <span className="self-center whitespace-nowrap text-xl font-semibold tracking-[0.2em] dark:text-white">
+                THEMILION SYSTEM
               </span>
             </Link>
-            <p className="max-w-xs">UI Library for Design Engineers</p>
+            <p className="max-w-xs text-muted-foreground">
+              Le System personnel qui transforme ta vie en RPG.
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-8 sm:gap-10 sm:grid-cols-3">
             {footerNavs.map((nav) => (
@@ -120,11 +124,11 @@ export function SiteFooter() {
             ))}
           </div>
           <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
-            Copyright © {new Date().getFullYear()}{" "}
+            © {new Date().getFullYear()}{" "}
             <Link href="/" className="cursor-pointer">
-              Magic UI
+              THEMILION SYSTEM
             </Link>
-            . All Rights Reserved.
+            . Tous droits réservés.
           </span>
         </div>
       </div>

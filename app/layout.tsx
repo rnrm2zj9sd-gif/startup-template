@@ -1,5 +1,7 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { MoteurProvider } from "@/lib/moteur-store";
+import { ProfileProvider } from "@/lib/profile-store";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -15,8 +17,9 @@ const fontMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 export const metadata: Metadata = {
-  title: "Magic UI",
-  description: "The startup template from Magic UI",
+  title: "THEMILION SYSTEM — Ta vie est un RPG",
+  description:
+    "THEMILION SYSTEM transforme tes objectifs en missions, ta discipline en XP et ta progression en rangs. XP, niveaux, streaks, coach IA, Performance Score et Life Map sur neuf domaines de vie. Rejoins la liste d'attente.",
 };
 
 export default function RootLayout({
@@ -25,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning>
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
@@ -41,7 +44,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          {children}
+          <ProfileProvider>
+            <MoteurProvider>{children}</MoteurProvider>
+          </ProfileProvider>
           <Toaster />
         </ThemeProvider>
       </body>

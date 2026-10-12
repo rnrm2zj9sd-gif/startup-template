@@ -10,23 +10,23 @@ import { useEffect, useState } from "react";
 const menuItem = [
   {
     id: 1,
-    label: "Features",
-    href: "/features",
+    label: "Le problème",
+    href: "#problemes",
   },
   {
     id: 2,
-    label: "Pricing",
-    href: "#",
+    label: "Fonctionnalités",
+    href: "#fonctionnalites",
   },
   {
     id: 3,
-    label: "Careers",
-    href: "#",
+    label: "Domaines",
+    href: "#domaines",
   },
   {
     id: 4,
-    label: "Contact Us",
-    href: "#",
+    label: "Liste d'attente",
+    href: "#waitlist",
   },
 ];
 
@@ -99,29 +99,35 @@ export function SiteHeader() {
     <>
       <header className="fixed left-0 top-0 z-50 w-full px-4 animate-fade-in border-b opacity-0 backdrop-blur-[12px] [--animation-delay:600ms]">
         <div className="container mx-auto flex h-[var(--navigation-height)] w-full items-center justify-between">
-          <Link className="text-md flex items-center justify-center" href="/">
-            Magic UI
+          <Link
+            className="text-md flex items-center justify-center font-semibold tracking-[0.2em]"
+            href="/"
+          >
+            THEMILION
           </Link>
 
-          <div className="ml-auto flex h-full items-center">
-            <Link className="mr-6 text-sm" href="/signin">
-              Log in
-            </Link>
+          <nav className="ml-auto hidden h-full items-center gap-6 md:flex">
+            {menuItem.slice(0, 3).map((item) => (
+              <Link
+                key={item.id}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                href={item.href}
+              >
+                {item.label}
+              </Link>
+            ))}
             <Link
-              className={cn(
-                buttonVariants({ variant: "secondary" }),
-                "mr-6 text-sm"
-              )}
-              href="/signup"
+              className={cn(buttonVariants({ variant: "default" }), "text-sm")}
+              href="#waitlist"
             >
-              Sign up
+              Rejoindre la liste d’attente
             </Link>
-          </div>
+          </nav>
           <button
             className="ml-6 md:hidden"
             onClick={() => setHamburgerMenuIsOpen((open) => !open)}
           >
-            <span className="sr-only">Toggle menu</span>
+            <span className="sr-only">Ouvrir le menu</span>
             {hamburgerMenuIsOpen ? <XIcon /> : <AlignJustify />}
           </button>
         </div>
@@ -140,15 +146,18 @@ export function SiteHeader() {
           )}
         >
           <div className="container mx-auto flex h-[var(--navigation-height)] items-center justify-between">
-            <Link className="text-md flex items-center" href="/">
-              Magic UI
+            <Link
+              className="text-md flex items-center font-semibold tracking-[0.2em]"
+              href="/"
+            >
+              THEMILION
             </Link>
 
             <button
               className="ml-6 md:hidden"
               onClick={() => setHamburgerMenuIsOpen((open) => !open)}
             >
-              <span className="sr-only">Toggle menu</span>
+              <span className="sr-only">Fermer le menu</span>
               {hamburgerMenuIsOpen ? <XIcon /> : <AlignJustify />}
             </button>
           </div>
@@ -169,6 +178,7 @@ export function SiteHeader() {
                     hamburgerMenuIsOpen ? "[&_a]:translate-y-0" : ""
                   }`}
                   href={item.href}
+                  onClick={() => setHamburgerMenuIsOpen(false)}
                 >
                   {item.label}
                 </Link>

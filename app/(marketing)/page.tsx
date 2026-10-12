@@ -1,7 +1,8 @@
-import ClientSection from "@/components/landing/client-section";
-import CallToActionSection from "@/components/landing/cta-section";
+import DomainsSection from "@/components/landing/domains-section";
+import FeaturesSection from "@/components/landing/features-section";
 import HeroSection from "@/components/landing/hero-section";
-import PricingSection from "@/components/landing/pricing-section";
+import ProblemSection from "@/components/landing/problem-section";
+import WaitlistSection from "@/components/landing/waitlist-section";
 import Particles from "@/components/magicui/particles";
 import { SphereMask } from "@/components/magicui/sphere-mask";
 
@@ -9,10 +10,11 @@ export default async function Page() {
   return (
     <>
       <HeroSection />
-      <ClientSection />
       <SphereMask />
-      <PricingSection />
-      <CallToActionSection />
+      <ProblemSection />
+      <FeaturesSection />
+      <DomainsSection />
+      <WaitlistSection />
       <Particles
         className="absolute inset-0 -z-10"
         quantity={50}
