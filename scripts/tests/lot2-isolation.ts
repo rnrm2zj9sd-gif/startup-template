@@ -8,6 +8,7 @@
  *   TEST_USER_A_EMAIL, TEST_USER_A_PASSWORD, TEST_USER_B_EMAIL, TEST_USER_B_PASSWORD
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import pg from "pg";
 import { loadEnvLocal } from "../env-local";
 
 loadEnvLocal();
@@ -52,6 +53,16 @@ async function signIn(email: string, password: string) {
   return { supabase, user: data.user, session: data.session };
 }
 
+async function openDb() {
+  if (!process.env.DATABASE_URL) throw new Error("préparation impossible : connexion directe absente");
+  const db = new pg.Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+  await db.connect();
+  return db;
+}
+
 function denied(error: { message?: string } | null, count: number | null = null) {
   if (error) return true;
   return count === 0;
@@ -79,7 +90,11 @@ async function testRedirectsWithoutSession() {
   }
 }
 
-async function testIsolation(a: Awaited<ReturnType<typeof signIn>>, b: Awaited<ReturnType<typeof signIn>>) {
+async function testIsolation(
+  a: Awaited<ReturnType<typeof signIn>>,
+  b: Awaited<ReturnType<typeof signIn>>,
+  db: pg.Client,
+) {
   const { data: own, error: ownErr } = await a.supabase.from("profiles").select("id, timezone, is_admin").eq("id", a.user.id).maybeSingle();
   if (ownErr || !own) {
     record("1 profiles A crée/lit sa ligne", "ÉCHEC", ownErr?.message ?? "profil A introuvable");
@@ -100,27 +115,23 @@ async function testIsolation(a: Awaited<ReturnType<typeof signIn>>, b: Awaited<R
     .single();
   record("1 A insère goals", goalErr || !goal ? "ÉCHEC" : "OK", goalErr?.message ?? `id=${goal?.id}`);
 
-  const { error: missionErr, data: mission } = await a.supabase
-    .from("missions")
-    .insert({
-      user_id: a.user.id,
-      // Le client ne peut pas supprimer de mission : jour passé au hasard et compétence unique
-      // évitent l'index daily du lot 3 et la limite de 12 missions par jour.
-      date_locale: new Date(Date.UTC(2000, 0, 1) + Math.floor(Math.random() * 7300) * 86_400_000).toISOString().slice(0, 10),
-      type: "daily",
-      domaine: "mind",
-      competence_id: `${MARK}-${Date.now()}`,
-      titre: `${MARK} mission`,
-      description: MARK,
-      duree_min: 10,
-      difficulte: "moyen",
-      payload: { mark: MARK },
-      xp_prevu: 5,
-      statut: "a_faire",
-    })
-    .select("id")
-    .single();
-  record("1 A insère missions", missionErr || !mission ? "ÉCHEC" : "OK", missionErr?.message ?? `id=${mission?.id}`);
+  // Insertion de test via connexion directe (le trigger joueur n'accepte plus une date passée).
+  const datePasse = new Date(Date.UTC(2000, 0, 1) + Math.floor(Math.random() * 7300) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  let mission: { id: string } | null = null;
+  let missionErr: string | null = null;
+  try {
+    const ins = await db.query(
+      `insert into public.missions (user_id, date_locale, type, domaine, competence_id, titre, description, duree_min, difficulte, payload, xp_prevu, statut)
+       values ($1, $2, 'daily', 'mind', $3, $4, $5, 10, 'moyen', $6::jsonb, 5, 'a_faire') returning id`,
+      [a.user.id, datePasse, `${MARK}-${Date.now()}`, `${MARK} mission`, MARK, JSON.stringify({ mark: MARK })],
+    );
+    mission = ins.rows[0] ?? null;
+  } catch (e) {
+    missionErr = e instanceof Error ? e.message : "insert mission";
+  }
+  record("1 A insère missions", missionErr || !mission ? "ÉCHEC" : "OK", missionErr ?? `id=${mission?.id}`);
 
   const { error: skillErr, data: skill } = await a.supabase
     .from("user_skill_choices")
@@ -365,9 +376,9 @@ async function testSessionWithA(a: Awaited<ReturnType<typeof signIn>>) {
   }
 }
 
-async function cleanup(a: Awaited<ReturnType<typeof signIn>>) {
+async function cleanup(a: Awaited<ReturnType<typeof signIn>>, db: pg.Client) {
   await a.supabase.from("goals").delete().eq("description", MARK);
-  await a.supabase.from("missions").delete().eq("description", MARK);
+  await db.query(`delete from public.missions where description = $1`, [MARK]);
   await a.supabase.from("user_skill_choices").delete().eq("competence_id", MARK);
   await a.supabase.from("user_skill_choices").delete().eq("competence_id", `${MARK}-vole`);
   await a.supabase.from("custom_catalog").delete().eq("user_id", a.user.id);
@@ -394,15 +405,17 @@ async function main() {
   const b = await signIn(process.env.TEST_USER_B_EMAIL!, process.env.TEST_USER_B_PASSWORD!);
   record("login A et B (anon)", "OK", "deux sessions distinctes");
 
+  const db = await openDb();
   try {
-    await testIsolation(a, b);
+    await testIsolation(a, b, db);
     await testReadonly(a);
     await testUniqueAndAdmin(a, b);
     await testRedirectsWithoutSession();
     await testSessionWithA(a);
     record("5 cascade", "non exécuté", "à coller dans SQL Editor : supabase/tests/lot2_cascade.sql (crée un user temporaire, pas A/B)");
   } finally {
-    await cleanup(a);
+    await cleanup(a, db);
+    await db.end();
     await a.supabase.auth.signOut();
     await b.supabase.auth.signOut();
   }

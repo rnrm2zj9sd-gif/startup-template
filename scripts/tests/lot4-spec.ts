@@ -38,8 +38,11 @@ const TESTS = [
   "user_id d'un autre joueur refusé (RLS)",
   "L'onboarding et la génération normale fonctionnent toujours",
   "Plafond 400 XP/jour tenu avec des missions gonflées",
+  "Fuseau POSIX, inconnu refusés ; Europe/Paris accepté",
+  "Deux changements de fuseau à moins de 7 jours : le second est refusé",
+  "Mission datée d'il y a 5 jours ou dans 5 jours refusée",
+  "Attaque des 800 XP : le total reste à 400 par jour local",
 ];
-const constats: string[] = [];
 
 function noter(n: number, result: Status, proof: string) {
   rows.push({ n, test: TESTS[n - 1], result, proof });
@@ -315,13 +318,17 @@ async function main() {
     noter(12, !!rStatut.error && !!rType.error ? "OK" : "ÉCHEC",
       `statut terminee → ${rStatut.error?.message ?? "ACCEPTÉ"} ; type side → ${rType.error?.message ?? "ACCEPTÉ"}`);
 
-    const jourTest = (await db.query(`select ($1::date + 3)::text as d`, [today])).rows[0].d as string;
+    const demain = (await db.query(`select ($1::date + 1)::text as d`, [today])).rows[0].d as string;
+    const deja = (await db.query(
+      `select count(*)::int as n from public.missions where user_id = $1 and date_locale = $2 and statut <> 'annulee'`,
+      [neuf.id, demain],
+    )).rows[0].n as number;
     let acceptees = 0;
-    for (let i = 0; i < 12; i++) if (!(await inserer({ date_locale: jourTest })).error) acceptees++;
-    const r13 = await inserer({ date_locale: jourTest });
-    const nbJour = (await db.query(`select count(*)::int as n from public.missions where user_id = $1 and date_locale = $2`, [neuf.id, jourTest])).rows[0].n;
-    noter(13, acceptees === 12 && !!r13.error && nbJour === 12 ? "OK" : "ÉCHEC",
-      `${acceptees}/12 acceptées le ${jourTest} ; 13e → ${r13.error?.message ?? "ACCEPTÉE"} ; en base : ${nbJour}`);
+    for (let i = deja; i < 12; i++) if (!(await inserer({ date_locale: demain })).error) acceptees++;
+    const r13 = await inserer({ date_locale: demain });
+    const nbJour = (await db.query(`select count(*)::int as n from public.missions where user_id = $1 and date_locale = $2`, [neuf.id, demain])).rows[0].n;
+    noter(13, deja + acceptees === 12 && !!r13.error && nbJour === 12 ? "OK" : "ÉCHEC",
+      `${deja} déjà + ${acceptees} = ${nbJour}/12 le ${demain} ; 13e → ${r13.error?.message ?? "ACCEPTÉE"}`);
 
     const rUid = await s.client.from("missions").insert(base({ user_id: randomUUID() })).select("id").maybeSingle();
     noter(14, rUid.error ? "OK" : "ÉCHEC", `user_id d'un autre → ${rUid.error?.message ?? "ACCEPTÉ"} (RLS missions_insert_own)`);
@@ -345,26 +352,53 @@ async function main() {
     noter(16, gonflees.length === 5 && xpJour === 400 ? "OK" : "ÉCHEC",
       `5 missions de 60 min « difficile » validées → +${credits.join(" / +")} XP ; total du jour en base : ${xpJour} (plafond 400)`);
 
-    // Constat (hors barème) : changer de fuseau pour qu'un minuit vienne de passer
-    await new Promise((r) => setTimeout(r, (61 - new Date().getUTCSeconds()) * 1000));
-    const utcMin = new Date().getUTCHours() * 60 + new Date().getUTCMinutes();
-    let est = (((0 - utcMin) % 1440) + 1440) % 1440;
-    if (est > 720) est -= 1440;
-    const tzMalin = `UTC${est >= 0 ? "-" : "+"}${Math.floor(Math.abs(est) / 60)}:${String(Math.abs(est) % 60).padStart(2, "0")}`;
-    const majTz = await s.client.from("profiles").update({ timezone: tzMalin }).eq("id", neuf.id).select("timezone");
-    const jourMalin = (await db.query(`select public.jour_local(now(), $1)::text as d`, [tzMalin])).rows[0].d as string;
+    const tzInscription = (await db.query(`select timezone from public.profiles where id = $1`, [neuf.id])).rows[0].timezone as string;
+    const posix = await s.client.from("profiles").update({ timezone: "UTC-9:40" }).eq("id", neuf.id).select("timezone");
+    const inconnu = await s.client.from("profiles").update({ timezone: "Mars/Phobos" }).eq("id", neuf.id).select("timezone");
+    const paris = await s.client.from("profiles").update({ timezone: "Europe/Paris" }).eq("id", neuf.id).select("timezone");
+    const setPseudo = await s.client.from("profiles").update({ pseudo: "Neuf Lot4" }).eq("id", neuf.id).select("pseudo");
+    const tzApres = (await db.query(`select timezone from public.profiles where id = $1`, [neuf.id])).rows[0].timezone as string;
+    noter(17, !!posix.error && !!inconnu.error && !paris.error && tzApres === "Europe/Paris" && tzInscription === "Europe/Paris" && (setPseudo.data ?? []).length > 0 ? "OK" : "ÉCHEC",
+      `inscription tz=${tzInscription} ; UTC-9:40 → ${posix.error?.message ?? "ACCEPTÉ"} ; inconnu → ${inconnu.error?.message ?? "ACCEPTÉ"} ; Europe/Paris → ${paris.error?.message ?? "OK"} ; paramètres (pseudo) → ${(setPseudo.data ?? []).length ? "OK" : "ÉCHEC"}`);
+
+    const berlin = await s.client.from("profiles").update({ timezone: "Europe/Berlin" }).eq("id", neuf.id).select("timezone");
+    const ny = await s.client.from("profiles").update({ timezone: "America/New_York" }).eq("id", neuf.id).select("timezone");
+    const tz18 = (await db.query(`select timezone, timezone_changed_at is not null as pose from public.profiles where id = $1`, [neuf.id])).rows[0];
+    noter(18, !berlin.error && !!ny.error && tz18.timezone === "Europe/Berlin" && tz18.pose ? "OK" : "ÉCHEC",
+      `1er (Berlin) → ${berlin.error?.message ?? "OK"} ; 2e (New_York) → ${ny.error?.message ?? "ACCEPTÉ"} ; tz=${tz18.timezone}`);
+
+    const ilYa5 = (await db.query(`select ($1::date - 5)::text as d`, [today])).rows[0].d as string;
+    const dans5 = (await db.query(`select ($1::date + 5)::text as d`, [today])).rows[0].d as string;
+    const rPasse = await inserer({ date_locale: ilYa5 });
+    const rFutur = await inserer({ date_locale: dans5 });
+    const far = await db.query(
+      `insert into public.missions (user_id, date_locale, type, domaine, competence_id, titre, description, duree_min, difficulte, payload, xp_prevu, statut)
+       values ($1, $2, 'daily', 'fitness', $3, 'lot4 loin', '', 10, 'moyen', '{}'::jsonb, 10, 'a_faire') returning id`,
+      [neuf.id, dans5, `lot4-far-${randomUUID().slice(0, 8)}`],
+    );
+    const vFar = await http(s, "POST", `/api/missions/${far.rows[0].id}/valider`, { ressenti: "bien" });
+    noter(19, !!rPasse.error && !!rFutur.error && vFar.status >= 400 ? "OK" : "ÉCHEC",
+      `il y a 5 j → ${rPasse.error?.message ?? "ACCEPTÉ"} ; dans 5 j → ${rFutur.error?.message ?? "ACCEPTÉ"} ; valider trop lointaine → ${vFar.status} ${vFar.json.error ?? ""}`);
+
+    const posix2 = await s.client.from("profiles").update({ timezone: "UTC-9:40" }).eq("id", neuf.id).select("timezone");
+    const kiri = await s.client.from("profiles").update({ timezone: "Pacific/Kiritimati" }).eq("id", neuf.id).select("timezone");
     const bonus: string[] = [];
     for (let i = 0; i < 4; i++) {
-      const { data } = await inserer({ date_locale: jourMalin, duree_min: 60, difficulte: "difficile", payload: { prevue: true, perso: false, niveauMoyen: 4 } });
+      const { data } = await inserer({ duree_min: 60, difficulte: "difficile", payload: { prevue: true, perso: false, niveauMoyen: 4 } });
       if (!data) continue;
       const v = await http(s, "POST", `/api/missions/${data.id}/valider`, { ressenti: "bien" });
-      bonus.push(v.status === 200 ? `${v.json.xp}${v.json.plafond ? ` (plafond ${v.json.plafond})` : ""}` : `erreur ${v.status} ${v.json.error}`);
+      bonus.push(v.status === 200 ? `${v.json.xp}${v.json.plafond ? ` (plafond ${v.json.plafond})` : ""}` : `erreur ${v.status}`);
     }
-    const xpTotal = (await db.query(`select coalesce(sum(montant), 0)::int as xp from public.xp_ledger where user_id = $1 and created_at > now() - interval '10 minutes'`, [neuf.id])).rows[0].xp;
-    constats.push(
-      `Fuseau : le client a pu écrire « ${tzMalin} » (${(majTz.data ?? []).length ? "accepté" : "refusé"}), jour local ${jourMalin}. ` +
-      `4 missions de plus validées → +${bonus.join(" / +")} XP. XP créditée en moins de 10 minutes : ${xpTotal}.`,
-    );
+    const parJour = (await db.query(
+      `select public.jour_local(l.created_at, coalesce(nullif(p.timezone, ''), 'Europe/Paris'))::text as jour, coalesce(sum(l.montant), 0)::int as xp
+       from public.xp_ledger l join public.profiles p on p.id = l.user_id
+       where l.user_id = $1 group by 1`,
+      [neuf.id],
+    )).rows as { jour: string; xp: number }[];
+    const trop = parJour.some((r) => r.xp > 400);
+    const tz20 = (await db.query(`select timezone from public.profiles where id = $1`, [neuf.id])).rows[0].timezone;
+    noter(20, !!posix2.error && !!kiri.error && !trop && parJour.length > 0 ? "OK" : "ÉCHEC",
+      `POSIX → ${posix2.error?.message ?? "ACCEPTÉ"} ; Kiritimati → ${kiri.error?.message ?? "ACCEPTÉ"} ; tz=${tz20} ; extra → +${bonus.join(" / +") || "0"} ; XP/jour local : ${parJour.map((r) => `${r.jour}=${r.xp}`).join(", ")}`);
   } finally {
     if (missionB) await db.query(`delete from public.missions where id = $1`, [missionB]);
     await db.query(`delete from auth.users where id = $1`, [neuf.id]);
@@ -381,7 +415,6 @@ main()
     rows.sort((a, b) => a.n - b.n);
     console.log("\n| # | Test | Résultat | Preuve |\n|---|------|----------|--------|");
     for (const r of rows) console.log(`| ${r.n} | ${r.test} | ${r.result} | ${r.proof.replace(/\|/g, "/")} |`);
-    for (const c of constats) console.log(`\nConstat (hors barème) : ${c}`);
     const ok = rows.filter((r) => r.result === "OK").length;
     console.log(`\n${ok}/${rows.length} OK`);
     process.exitCode = ok === rows.length ? 0 : 1;

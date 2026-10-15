@@ -8,6 +8,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import pg from "pg";
 import { ajouterJours, enregistrerResultat, etatInitial, type SeancePrevue } from "../../lib/moteur";
 import { chaineDepuisJours } from "../../lib/progression/chaine";
 import { niveauDepuisXp, rangDepuisNiveau, xpPourNiveau } from "../../lib/progression/niveau";
@@ -76,29 +77,56 @@ function jourPasseAuHasard(): string {
   return new Date(Date.UTC(2000, 0, 1) + Math.floor(Math.random() * 7300) * 86_400_000).toISOString().slice(0, 10);
 }
 
-async function createMission(supabase: SupabaseClient, userId: string, patch: Record<string, unknown> = {}) {
-  const { data, error } = await supabase
-    .from("missions")
-    .insert({
-      user_id: userId,
-      // Le client ne supprime pas ses missions : un jour passé au hasard évite la limite de 12 par jour.
-      date_locale: jourPasseAuHasard(),
-      type: "daily",
-      domaine: "discipline",
-      competence_id: `lot3-test-${randomUUID().slice(0, 8)}`,
-      titre: `lot3 ${Date.now()}`,
-      description: "test lot 3",
-      duree_min: 10,
-      difficulte: "moyen",
-      payload: { source: "test", prevue: true, perso: false, focusIds: [] },
-      xp_prevu: 16,
-      statut: "a_faire",
-      ...patch,
-    })
-    .select("id")
-    .single();
-  if (error || !data) throw new Error(error?.message ?? "insert mission");
-  return data;
+async function openDb() {
+  if (!process.env.DATABASE_URL) throw new Error("préparation impossible : connexion directe absente");
+  const db = new pg.Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+  await db.connect();
+  return db;
+}
+
+const missionsTest: string[] = [];
+
+async function createMission(db: pg.Client, userId: string, patch: Record<string, unknown> = {}) {
+  const row = {
+    user_id: userId,
+    date_locale: jourPasseAuHasard(),
+    type: "daily",
+    domaine: "discipline",
+    competence_id: `lot3-test-${randomUUID().slice(0, 8)}`,
+    titre: `lot3 ${Date.now()}`,
+    description: "test lot 3",
+    duree_min: 10,
+    difficulte: "moyen",
+    payload: { source: "test", prevue: true, perso: false, focusIds: [] },
+    xp_prevu: 16,
+    statut: "a_faire",
+    ...patch,
+  };
+  const ins = await db.query(
+    `insert into public.missions (user_id, date_locale, type, domaine, competence_id, titre, description, duree_min, difficulte, payload, xp_prevu, statut)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12) returning id`,
+    [
+      row.user_id,
+      row.date_locale,
+      row.type,
+      row.domaine,
+      row.competence_id,
+      row.titre,
+      row.description,
+      row.duree_min,
+      row.difficulte,
+      JSON.stringify(row.payload),
+      row.xp_prevu,
+      row.statut,
+    ],
+  );
+  const id = ins.rows[0]?.id as string | undefined;
+  if (!id) throw new Error("insert mission");
+  missionsTest.push(id);
+  return { id };
 }
 
 function testsPurs() {
@@ -217,9 +245,11 @@ async function testsBase() {
 
   let a: Awaited<ReturnType<typeof signIn>>;
   let b: Awaited<ReturnType<typeof signIn>>;
+  let db: pg.Client;
   try {
     a = await signIn(process.env.TEST_USER_A_EMAIL!, process.env.TEST_USER_A_PASSWORD!);
     b = await signIn(process.env.TEST_USER_B_EMAIL!, process.env.TEST_USER_B_PASSWORD!);
+    db = await openDb();
   } catch (err) {
     const proof = err instanceof Error ? err.message : "auth";
     for (const [n, test] of [
@@ -250,6 +280,7 @@ async function testsBase() {
     record(12, "écriture directe dans xp_ledger refusée depuis le client", "ÉCHEC", err instanceof Error ? err.message : "erreur");
   }
 
+  try {
   const { error: rpcMissing } = await a.supabase.rpc("jour_local", {
     p_ts: new Date().toISOString(),
     p_tz: "Europe/Paris",
@@ -267,7 +298,7 @@ async function testsBase() {
   }
 
   try {
-    const mission = await createMission(a.supabase, a.user.id);
+    const mission = await createMission(db, a.user.id);
     const attendu = calculerXpMission(
       { dureeMin: 10, difficulte: "moyen", prevue: true, perso: false },
       { chaineJours: 0 },
@@ -288,7 +319,7 @@ async function testsBase() {
   }
 
   try {
-    const mission = await createMission(a.supabase, a.user.id);
+    const mission = await createMission(db, a.user.id);
     const [r1, r2] = await Promise.allSettled([
       a.supabase.rpc("validate_mission", { p_mission_id: mission.id, p_ressenti: "bien", p_note: "" }),
       a.supabase.rpc("validate_mission", { p_mission_id: mission.id, p_ressenti: "bien", p_note: "" }),
@@ -306,7 +337,7 @@ async function testsBase() {
   }
 
   try {
-    const missionB = await createMission(b.supabase, b.user.id);
+    const missionB = await createMission(db, b.user.id);
     const { error } = await a.supabase.rpc("validate_mission", {
       p_mission_id: missionB.id,
       p_ressenti: "bien",
@@ -321,6 +352,13 @@ async function testsBase() {
     );
   } catch (err) {
     record(3, "mission d'un autre joueur refusée", "ÉCHEC", err instanceof Error ? err.message : "erreur");
+  }
+  } finally {
+    if (missionsTest.length) {
+      await db.query(`delete from public.xp_ledger where mission_id = any($1::uuid[])`, [missionsTest]);
+      await db.query(`delete from public.missions where id = any($1::uuid[])`, [missionsTest]);
+    }
+    await db.end();
   }
 }
 
