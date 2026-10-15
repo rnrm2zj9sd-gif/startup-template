@@ -1,16 +1,16 @@
-import type { GoalId, TimeOptionId } from "@/config/onboarding-data";
-
 export type Rank = "E" | "D" | "C" | "B" | "A" | "S" | "SS";
 
 export type Gender = "male" | "female";
 
+export function parseGender(value: unknown): Gender | null {
+  return value === "male" || value === "female" ? value : null;
+}
+
+/** Choix de l'onboarding, stockés dans `profiles.initiation`. */
 export interface InitiationProfile {
-  primary: GoalId;
-  secondary: GoalId[];
-  skillKeys: string[];
-  time: TimeOptionId;
-  customMinutes: number;
-  days: number[];
+  competences: { id: string; focusIds: string[] }[];
+  budgetMinutes: number;
+  materiel: string[];
 }
 
 /** Profil utilisateur du System (le joueur). */

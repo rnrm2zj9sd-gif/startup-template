@@ -10,6 +10,7 @@
     "test": "npx tsx --test test.ts lib/temps.test.ts lib/progression/progression.test.ts",
     "test:lot2": "npx tsx scripts/tests/lot2-isolation.ts",
     "test:lot3": "npx tsx scripts/tests/lot3-spec.ts",
+    "test:lot4": "npx tsx scripts/tests/lot4-spec.ts",
     "test:lot2:sql": "npx tsx scripts/tests/lot2-sql.ts",
     "db:apply": "npx tsx scripts/appliquer-sql.ts"
   },

@@ -125,21 +125,34 @@ test("l'initiation pose 4 questions principales plus 1 par secondaire", async ()
   assert.equal(liste.filter((q) => q.goal === "physique").length, 4);
 });
 
-test("profilDepuisInitiation reste dans 3 compétences", async () => {
-  const { profilDepuisInitiation } = await import("./lib/onboarding");
-  const contrat = profilDepuisInitiation(
-    {
-      primary: "physique",
-      secondary: ["finance"],
-      answers: { "physique.0": 0 },
-      skillKeys: ["physique.0", "physique.1", "physique.2", "finance.0"],
-      time: "t2",
-      customMinutes: 25,
-      days: [0, 2, 4],
-    },
-    "test",
-  );
-  assert.ok(contrat.choix.length <= 3);
-  assert.ok(contrat.choix.some((c) => c.competenceId === "musculation"));
+test("onboarding : 2 à 3 compétences du catalogue, zones et budget vérifiés", async () => {
+  const { validerOnboarding, profilDepuisOnboarding } = await import("./lib/onboarding");
+  const base = { pseudo: "Test", gender: "female", budgetMinutes: 20, materiel: ["halteres"] };
+  const ok = validerOnboarding({
+    ...base,
+    competences: [{ id: "musculation", focusIds: ["abdos"] }, { id: "education-financiere", focusIds: [] }],
+  });
+  assert.ok(ok.ok);
+  if (!ok.ok) return;
+  assert.deepEqual(ok.value.materiel, ["aucun", "halteres"]);
+  const contrat = profilDepuisOnboarding("test", ok.value);
+  assert.equal(contrat.choix.length, 2);
   assert.equal(contrat.budgetMinutesJour, 20);
+
+  assert.equal(validerOnboarding({ ...base, competences: [{ id: "musculation" }] }).ok, false);
+  assert.equal(validerOnboarding({ ...base, competences: [{ id: "x" }, { id: "musculation" }] }).ok, false);
+  assert.equal(
+    validerOnboarding({ ...base, competences: [{ id: "musculation", focusIds: ["nope"] }, { id: "endurance" }] }).ok,
+    false,
+  );
+  assert.equal(validerOnboarding({ ...base, budgetMinutes: 7, competences: [{ id: "musculation" }, { id: "endurance" }] }).ok, false);
+});
+
+test("première victoire : mission plancher de 2 minutes, XP positive", async () => {
+  const { premiereVictoire } = await import("./lib/onboarding");
+  const m = premiereVictoire({ competences: [{ id: "musculation", focusIds: ["abdos"] }], materiel: ["aucun"] });
+  assert.equal(m.type, "first");
+  assert.equal(m.duree_min, 2);
+  assert.ok(m.xp_prevu > 0);
+  assert.ok(m.description.length > 0);
 });

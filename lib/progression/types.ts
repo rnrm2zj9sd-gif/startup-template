@@ -7,7 +7,7 @@ export type MissionRow = {
   id: string;
   user_id: string;
   date_locale: string;
-  type: "daily" | "weekly" | "main" | "side";
+  type: "daily" | "weekly" | "main" | "side" | "first";
   domaine: DomaineAffiche;
   competence_id: string;
   titre: string;
@@ -18,6 +18,14 @@ export type MissionRow = {
   xp_prevu: number;
   statut: "a_faire" | "terminee" | "annulee";
   goal_id: string | null;
+  created_at: string;
+};
+
+export type JournalLigne = {
+  id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
 };
 
 export type ValidateMissionResult = {

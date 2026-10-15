@@ -47,7 +47,7 @@ export function SignupForm() {
       email: email.trim(),
       password,
       options: {
-        data: { pseudo: trimmed },
+        data: { pseudo: trimmed, gender },
         emailRedirectTo: `${origin}/auth/callback`,
       },
     });
@@ -78,7 +78,13 @@ export function SignupForm() {
 
     if (data.session) {
       if (data.user) {
-        await supabase.from("profiles").update({ pseudo: trimmed }).eq("id", data.user.id);
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ pseudo: trimmed, gender })
+          .eq("id", data.user.id);
+        if (profileError) {
+          await supabase.from("profiles").update({ pseudo: trimmed }).eq("id", data.user.id);
+        }
       }
       toast.success("Compte créé.", { description: "On construit ton contrat." });
       router.replace("/onboarding");

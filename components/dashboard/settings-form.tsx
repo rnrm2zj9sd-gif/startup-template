@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { useProfile } from "@/lib/profile-store";
 import { createClient } from "@/lib/supabase/client";
 import type { Gender } from "@/types/player";
-import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -36,7 +35,12 @@ export function SettingsForm() {
     }
     updateProfile({ name: trimmed, gender });
     if (userId) {
-      const { error } = await createClient().from("profiles").update({ pseudo: trimmed }).eq("id", userId);
+      const supabase = createClient();
+      let { error } = await supabase.from("profiles").update({ pseudo: trimmed, gender }).eq("id", userId);
+      if (error) {
+        const retry = await supabase.from("profiles").update({ pseudo: trimmed }).eq("id", userId);
+        error = retry.error;
+      }
       if (error) {
         toast.error("Le prénom n’a pas été enregistré sur le compte.");
         return;
@@ -85,11 +89,6 @@ export function SettingsPageContent() {
     <div className="flex flex-col gap-10">
       <SettingsForm />
       <CompetenceSettings />
-      <p className="text-sm text-muted-foreground">
-        <Link href="/onboarding" className="underline underline-offset-4 hover:text-foreground">
-          Refaire l&apos;initiation
-        </Link>
-      </p>
     </div>
   );
 }

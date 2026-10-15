@@ -45,5 +45,13 @@ export function useMissionsJour() {
     [],
   );
 
-  return { missions, date, loading, error, reload, valider };
+  const reporter = useCallback(async (missionId: string) => {
+    const res = await fetch(`/api/missions/${missionId}/reporter`, { method: "POST" });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? "Report impossible");
+    setMissions((prev) => prev.filter((m) => m.id !== missionId));
+    return json.mission as MissionRow;
+  }, []);
+
+  return { missions, date, loading, error, reload, valider, reporter };
 }

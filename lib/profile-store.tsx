@@ -1,8 +1,9 @@
 "use client";
 
 import { emptyProfile } from "@/config/user";
+import { parseInitiationProfile } from "@/lib/onboarding";
 import { createClient } from "@/lib/supabase/client";
-import type { Gender, UserProfile } from "@/types/player";
+import { parseGender, type Gender, type UserProfile } from "@/types/player";
 import {
   createContext,
   useCallback,
@@ -19,9 +20,32 @@ interface ProfileContextValue {
   /** Vrai une fois le compte Supabase relu. */
   hydrated: boolean;
   updateProfile: (patch: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => void;
+  /** Relit niveau, rang et XP depuis GET /api/me/progression (après une validation). */
+  reloadProgression: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
+
+type ProgressionProfil = Pick<UserProfile, "level" | "className" | "rank" | "xp" | "xpNext" | "power" | "missionsValidees">;
+
+async function lireProgression(): Promise<ProgressionProfil | null> {
+  try {
+    const res = await fetch("/api/me/progression");
+    if (!res.ok) return null;
+    const snap = await res.json();
+    return {
+      level: snap.niveau,
+      className: snap.classe,
+      rank: snap.rang,
+      xp: snap.xpDansNiveau,
+      xpNext: snap.xpPourSuivant,
+      power: snap.power,
+      missionsValidees: snap.missionsValidees,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function genderKey(userId: string) {
   return `themilion:gender:${userId}`;
@@ -64,18 +88,28 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data } = await supabase
+      const first = await supabase
         .from("profiles")
-        .select("pseudo, onboarding_done")
+        .select("pseudo, onboarding_done, gender, initiation")
         .eq("id", user.id)
         .maybeSingle();
+
+      let data = first.data;
+      if (first.error) {
+        const fallbackRow = await supabase
+          .from("profiles")
+          .select("pseudo, onboarding_done")
+          .eq("id", user.id)
+          .maybeSingle();
+        data = fallbackRow.data as typeof data;
+      }
 
       if (cancelled) return;
 
       const pseudo = (data?.pseudo ?? "").trim();
       const fallback = user.email?.split("@")[0] ?? "";
 
-      let progression = {
+      const progression: ProgressionProfil = (await lireProgression()) ?? {
         level: emptyProfile.level,
         className: emptyProfile.className,
         rank: emptyProfile.rank,
@@ -85,32 +119,33 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         missionsValidees: 0,
       };
 
-      try {
-        const res = await fetch("/api/me/progression");
-        if (res.ok) {
-          const snap = await res.json();
-          progression = {
-            level: snap.niveau,
-            className: snap.classe,
-            rank: snap.rang,
-            xp: snap.xpDansNiveau,
-            xpNext: snap.xpPourSuivant,
-            power: snap.power,
-            missionsValidees: snap.missionsValidees,
-          };
-        }
-      } catch {
-        // Snapshot indisponible : on garde les dérivés vides.
-      }
-
       if (cancelled) return;
+
+      const storedGender = readGender(user.id);
+      const dbGender = parseGender(data?.gender);
+      const gender = storedGender ?? dbGender ?? "male";
+      if (storedGender) {
+        let persisted = dbGender === storedGender;
+        if (!persisted) {
+          const { error } = await supabase.from("profiles").update({ gender: storedGender }).eq("id", user.id);
+          persisted = !error;
+        }
+        if (persisted) {
+          try {
+            window.localStorage.removeItem(genderKey(user.id));
+          } catch {
+            // ignore
+          }
+        }
+      }
 
       setUserId(user.id);
       setProfile({
         ...emptyProfile,
         name: pseudo || fallback,
-        gender: readGender(user.id) ?? "male",
+        gender,
         onboardingDone: Boolean(data?.onboarding_done),
+        initiation: parseInitiationProfile(data?.initiation),
         ...progression,
       });
       setHydrated(true);
@@ -131,14 +166,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         } catch {
           // ignore
         }
+        void createClient().from("profiles").update({ gender: next.gender }).eq("id", userId);
       }
       return next;
     });
   }, [userId]);
 
+  const reloadProgression = useCallback(async () => {
+    const progression = await lireProgression();
+    if (progression) setProfile((prev) => ({ ...prev, ...progression }));
+  }, []);
+
   const value = useMemo(
-    () => ({ profile, userId, hydrated, updateProfile }),
-    [profile, userId, hydrated, updateProfile],
+    () => ({ profile, userId, hydrated, updateProfile, reloadProgression }),
+    [profile, userId, hydrated, updateProfile, reloadProgression],
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

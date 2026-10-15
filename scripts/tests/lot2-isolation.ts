@@ -107,7 +107,8 @@ async function testIsolation(a: Awaited<ReturnType<typeof signIn>>, b: Awaited<R
       date_locale: "2026-10-12",
       type: "daily",
       domaine: "mind",
-      competence_id: MARK,
+      // Le client ne peut pas supprimer de mission : une compétence unique évite l'index daily du lot 3.
+      competence_id: `${MARK}-${Date.now()}`,
       titre: `${MARK} mission`,
       description: MARK,
       duree_min: 10,

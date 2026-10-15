@@ -76,7 +76,10 @@ async function testCascade(client: Client): Promise<void> {
   const sql = readFileSync(path.join(ROOT, "supabase/tests/lot2_cascade.sql"), "utf8");
   const res = (await client.query(sql)) as unknown as QueryResult[];
   const compte = res.find((r) => r.fields?.some((f) => f.name.startsWith("remaining_")))?.rows[0];
-  if (!compte) return noter("5 cascade", false, "pas de résultat remaining_*");
+  if (!compte) {
+    noter("5 cascade", false, "pas de résultat remaining_*");
+    return;
+  }
   const restes = Object.entries(compte).filter(([, v]) => Number(v) !== 0);
   noter("5 cascade (suppression de l'utilisateur temporaire)", restes.length === 0,
     restes.length ? `restes : ${restes.map(([k, v]) => `${k}=${v}`).join(", ")}`
