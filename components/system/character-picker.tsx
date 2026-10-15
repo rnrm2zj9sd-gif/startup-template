@@ -34,14 +34,14 @@ export function CharacterPicker({ value, onChange, className }: CharacterPickerP
             aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "group relative flex flex-col items-center gap-3 rounded-2xl border bg-card p-4 pt-6 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/60",
+              "group relative flex flex-col items-center gap-3 rounded-2xl border bg-card p-4 pt-6 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
               selected
-                ? "border-brand-purple/60 bg-panel"
+                ? "border-primary/60 bg-panel"
                 : "border-border hover:border-white/15 hover:bg-panel"
             )}
           >
             {selected && (
-              <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-brand-purple text-white">
+              <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <Check className="size-3" aria-hidden />
               </span>
             )}
@@ -49,8 +49,8 @@ export function CharacterPicker({ value, onChange, className }: CharacterPickerP
               <div
                 aria-hidden
                 className={cn(
-                  "pointer-events-none absolute inset-x-4 bottom-2 top-6 rounded-full blur-2xl transition-opacity",
-                  selected ? "bg-brand-purple/30 opacity-100" : "bg-brand-purple/20 opacity-40"
+                  "pointer-events-none absolute inset-x-4 bottom-2 top-6 rounded-full bg-primary blur-2xl transition-opacity",
+                  selected ? "opacity-30" : "opacity-15"
                 )}
               />
               <SystemCharacter

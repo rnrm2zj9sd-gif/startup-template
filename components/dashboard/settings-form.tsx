@@ -1,6 +1,5 @@
 "use client";
 
-import { CompetenceSettings } from "@/components/dashboard/competence-settings";
 import { CharacterPicker } from "@/components/system/character-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useProfile } from "@/lib/profile-store";
 import { createClient } from "@/lib/supabase/client";
 import type { Gender } from "@/types/player";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -84,11 +85,29 @@ export function SettingsForm() {
   );
 }
 
+function CompetencesLink() {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
+      <h2 className="text-xs tracking-[0.3em] text-muted-foreground">COMPÉTENCES</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Ajoute ou retire tes compétences (1 à 5). Un changement s&apos;applique dès demain.
+      </p>
+      <Link
+        href="/competences"
+        className="mt-4 inline-flex items-center gap-2 text-sm text-primary underline-offset-2 hover:underline"
+      >
+        Gérer mes compétences
+        <ArrowRight className="size-3.5" aria-hidden />
+      </Link>
+    </section>
+  );
+}
+
 export function SettingsPageContent() {
   return (
     <div className="flex flex-col gap-10">
       <SettingsForm />
-      <CompetenceSettings />
+      <CompetencesLink />
     </div>
   );
 }

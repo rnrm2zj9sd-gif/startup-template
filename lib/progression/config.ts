@@ -31,6 +31,15 @@ export const CLASSE_FENETRE_JOURS = 30;
 export const DOMAINE_AFFICHE = ["finance", "mind", "health", "fitness", "discipline", "life"] as const;
 export type DomaineAffiche = (typeof DOMAINE_AFFICHE)[number];
 
+export const DOMAINE_LABELS: Record<DomaineAffiche, string> = {
+  finance: "Finance",
+  mind: "Mind",
+  health: "Health",
+  fitness: "Fitness",
+  discipline: "Discipline",
+  life: "Life",
+};
+
 export const DOMAINE_MOTEUR_VERS_AFFICHE: Record<string, DomaineAffiche> = {
   Finance: "finance",
   "Business & Carrière": "finance",

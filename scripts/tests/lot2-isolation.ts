@@ -421,6 +421,30 @@ async function main() {
   }
 
   const failed = rows.some((r) => r.result === "ÉCHEC");
+  const LOT2 = [
+    "Isolation A/B (RLS)",
+    "Tables protégées en lecture seule",
+    "UNIQUE mission_validations",
+    "A ne peut pas se passer is_admin",
+    "Cascade suppression user",
+    "Trigger profil + timezone",
+    "Sans session → /login",
+  ];
+  const resume = LOT2.map((test, i) => {
+    const n = i + 1;
+    const g = rows.filter((r) => r.test === `${n}` || r.test.startsWith(`${n} `));
+    const fail = g.some((r) => r.result === "ÉCHEC");
+    const ok = g.some((r) => r.result === "OK");
+    const result: Status = fail ? "ÉCHEC" : ok ? "OK" : "non exécuté";
+    const proof = g.map((r) => r.result).includes("ÉCHEC")
+      ? g.filter((r) => r.result === "ÉCHEC").map((r) => r.proof).join(" ; ")
+      : g.find((r) => r.result === "OK")?.proof ?? g[0]?.proof ?? "aucune ligne";
+    return { n, test, result, proof };
+  });
+  console.log("\n| # | Test | Résultat | Preuve |\n|---|------|----------|--------|");
+  for (const r of resume) console.log(`| ${r.n} | ${r.test} | ${r.result} | ${r.proof.replace(/\|/g, "/")} |`);
+  const okN = resume.filter((r) => r.result === "OK").length;
+  console.log(`\n${okN}/7 OK`);
   process.exit(failed ? 1 : 0);
 }
 

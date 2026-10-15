@@ -77,6 +77,7 @@ export function snapshotDepuisTables(input: {
   const missionsValidees = input.missions.filter((m) => m.statut === "terminee").length;
   const niveauxDomaines = niveauxDomainesDepuisXp(xpParDomaine);
   const { niveau, xpDansNiveau, xpPourSuivant } = progressionVersNiveauSuivant(xpTotal);
+  const sommeNiveaux = DOMAINE_AFFICHE.reduce((acc, d) => acc + niveauxDomaines[d], 0);
 
   const debutDiscipline = decalerJour(aujourdHui, -(DISCIPLINE_JOURS - 1));
   let prevues = 0;
@@ -98,19 +99,51 @@ export function snapshotDepuisTables(input: {
     }
   }
 
+  const disciplineInput = { prevues, tenues, joursActifs: joursActifs.size, reportees, reporteesFaites };
+  const discipline = indiceDeDiscipline(disciplineInput);
+  const fenetre = DISCIPLINE_JOURS;
+  const partTenues = Math.round(60 * (prevues > 0 ? tenues / prevues : 0));
+  const partActifs = Math.round(25 * (fenetre > 0 ? joursActifs.size / fenetre : 0));
+  const partReports = Math.round(15 * (reportees > 0 ? reporteesFaites / reportees : 0));
+
+  const parJour = new Map<string, number>();
+  for (const row of input.ledger) {
+    const jour = jourLocal(new Date(row.created_at), tz);
+    parJour.set(jour, (parJour.get(jour) ?? 0) + row.montant);
+  }
+  const xpParJour = Array.from({ length: 30 }, (_, i) => {
+    const date = decalerJour(aujourdHui, -(29 - i));
+    return { date, xp: parJour.get(date) ?? 0 };
+  });
+
+  const power = calculerPower({ niveauxDomaines, objectifsValides });
+
   return {
     xpTotal,
     niveau,
     xpDansNiveau,
     xpPourSuivant,
     rang: rangDepuisNiveau(niveau),
-    power: calculerPower({ niveauxDomaines, objectifsValides }),
+    power,
     classe: calculerClasse({ missionsValidees, xp30jParDomaine: xp30j }),
-    discipline: indiceDeDiscipline({ prevues, tenues, joursActifs: joursActifs.size, reportees, reporteesFaites }),
+    discipline,
     chaineJours: chaineDepuisJours(joursLedger),
     missionsValidees,
     xpParDomaine,
     niveauxDomaines,
+    powerDetail: { sommeNiveaux, objectifsValides },
+    disciplineDetail: {
+      score: discipline,
+      partTenues,
+      partActifs,
+      partReports,
+      tenues,
+      prevues,
+      joursActifs: joursActifs.size,
+      reportees,
+      reporteesFaites,
+    },
+    xpParJour,
   };
 }
 

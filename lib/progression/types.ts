@@ -40,6 +40,25 @@ export type ValidateMissionResult = {
   missionId: string;
 };
 
+export type PowerDetail = {
+  sommeNiveaux: number;
+  objectifsValides: number;
+};
+
+export type DisciplineDetail = {
+  score: number;
+  partTenues: number;
+  partActifs: number;
+  partReports: number;
+  tenues: number;
+  prevues: number;
+  joursActifs: number;
+  reportees: number;
+  reporteesFaites: number;
+};
+
+export type XpJour = { date: string; xp: number };
+
 export type ProgressionSnapshot = {
   xpTotal: number;
   niveau: number;
@@ -53,4 +72,7 @@ export type ProgressionSnapshot = {
   missionsValidees: number;
   xpParDomaine: Record<DomaineAffiche, number>;
   niveauxDomaines: Record<DomaineAffiche, number>;
+  powerDetail: PowerDetail;
+  disciplineDetail: DisciplineDetail;
+  xpParJour: XpJour[];
 };

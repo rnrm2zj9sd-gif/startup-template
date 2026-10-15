@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { RESSENTI_LABELS } from "@/lib/moteur/app";
 import type { Ressenti } from "@/lib/moteur";
+import { texteJournal } from "@/lib/progression/journal";
 import type { JournalLigne, MissionRow, ProgressionSnapshot } from "@/lib/progression/types";
 import { useMissionsJour } from "@/lib/progression/use-missions";
 import { useProgression } from "@/lib/progression/use-progression";
@@ -25,7 +26,7 @@ export function DailySystem() {
   const [journal, setJournal] = useState<JournalLigne[] | null>(null);
 
   const reloadJournal = useCallback(async () => {
-    const res = await fetch("/api/me/journal");
+    const res = await fetch("/api/me/journal?limit=10");
     if (res.ok) setJournal(((await res.json()) as { lignes: JournalLigne[] }).lignes);
   }, []);
 
@@ -74,8 +75,8 @@ export function DailySystem() {
         ) : missions.length === 0 ? (
           <p className="px-5 py-6 text-sm text-muted-foreground">
             Aucune mission aujourd&apos;hui. Ajuste tes compétences dans{" "}
-            <Link href="/dashboard/parametres" className="text-foreground underline-offset-2 hover:underline">
-              Paramètres
+            <Link href="/competences" className="text-foreground underline-offset-2 hover:underline">
+              Compétences
             </Link>
             .
           </p>
@@ -238,28 +239,36 @@ function MissionItem({
   );
 }
 
-function texteJournal(l: JournalLigne): string {
-  const p = l.payload ?? {};
-  switch (l.type) {
-    case "mission_validee":
-      return `Mission validée · ressenti ${RESSENTI_LABELS[p.ressenti as Ressenti]?.toLowerCase() ?? "—"}`;
-    case "xp_gagnee":
-      return `+${p.xp} XP${p.plafond ? " (plafond atteint)" : ""}`;
-    case "niveau_gagne":
-      return `Niveau ${p.de} → ${p.vers}`;
-    case "rang_obtenu":
-      return `Rang ${p.vers} obtenu`;
-    default:
-      return l.type;
-  }
+function DateLabel({ iso }: { iso: string }) {
+  const [txt, setTxt] = useState("…");
+  useEffect(() => {
+    setTxt(
+      new Date(iso).toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    );
+  }, [iso]);
+  return (
+    <time dateTime={iso} className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+      {txt}
+    </time>
+  );
 }
 
 function Journal({ lignes }: { lignes: JournalLigne[] | null }) {
   return (
     <section aria-labelledby="journal-title" className="rounded-2xl border border-border bg-card">
-      <h2 id="journal-title" className="border-b border-border px-5 py-4 text-[11px] tracking-[0.3em] text-muted-foreground">
-        SYSTEM LOG
-      </h2>
+      <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <h2 id="journal-title" className="text-[11px] tracking-[0.3em] text-muted-foreground">
+          SYSTEM LOG
+        </h2>
+        <Link href="/journal" className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+          Voir tout
+        </Link>
+      </header>
       {lignes === null ? (
         <p className="px-5 py-4 text-sm text-muted-foreground">Chargement…</p>
       ) : lignes.length === 0 ? (
@@ -269,9 +278,7 @@ function Journal({ lignes }: { lignes: JournalLigne[] | null }) {
           {lignes.map((l) => (
             <li key={l.id} className="flex items-baseline justify-between gap-3 px-5 py-2.5 text-sm" data-log-type={l.type}>
               <span className={l.type === "xp_gagnee" ? "text-brand-gold" : ""}>{texteJournal(l)}</span>
-              <time dateTime={l.created_at} className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
-                {new Date(l.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-              </time>
+              <DateLabel iso={l.created_at} />
             </li>
           ))}
         </ol>

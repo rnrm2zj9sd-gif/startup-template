@@ -29,6 +29,7 @@ interface MoteurContextValue {
   meilleureChaine: number;
   today: string;
   hydrated: boolean;
+  reload: () => Promise<void>;
   updateProfil: (patch: Partial<Profil> | ((prev: Profil) => Profil)) => void;
   appliquerContrat: (profil: Profil, etat?: EtatUtilisateur) => Promise<void>;
   terminerSeance: (seance: SeancePrevue, ressenti: Ressenti) => void;
@@ -46,49 +47,43 @@ export function MoteurProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const today = aujourdHuiISO();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user || cancelled) {
-        setHydrated(true);
-        return;
-      }
-
-      const [{ data: choix }, { data: catalogRow }, { data: progress }] = await Promise.all([
-        supabase
-          .from("user_skill_choices")
-          .select("competence_id, focus_ids, seances_semaine, minutes_max")
-          .eq("user_id", user.id),
-        supabase.from("custom_catalog").select("data").eq("user_id", user.id).maybeSingle(),
-        supabase.from("skill_progress").select("competence_id, focus_id, niveau, palier").eq("user_id", user.id),
-      ]);
-
-      if (cancelled) return;
-      setProfil(
-        profilDepuisLignes({
-          userId: user.id,
-          choix: choix ?? [],
-          catalog: (catalogRow?.data ?? null) as ContratPersiste | null,
-        }),
-      );
-      const nextEtat = etatInitial();
-      for (const p of progress ?? []) {
-        nextEtat.progression[`${p.competence_id}:${p.focus_id}`] = { niveau: p.niveau, palier: p.palier };
-      }
-      setEtat(nextEtat);
+  const reload = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       setHydrated(true);
+      return;
     }
 
-    void load();
-    return () => {
-      cancelled = true;
-    };
+    const [{ data: choix }, { data: catalogRow }, { data: progress }] = await Promise.all([
+      supabase
+        .from("user_skill_choices")
+        .select("competence_id, focus_ids, seances_semaine, minutes_max")
+        .eq("user_id", user.id),
+      supabase.from("custom_catalog").select("data").eq("user_id", user.id).maybeSingle(),
+      supabase.from("skill_progress").select("competence_id, focus_id, niveau, palier").eq("user_id", user.id),
+    ]);
+
+    setProfil(
+      profilDepuisLignes({
+        userId: user.id,
+        choix: choix ?? [],
+        catalog: (catalogRow?.data ?? null) as ContratPersiste | null,
+      }),
+    );
+    const nextEtat = etatInitial();
+    for (const p of progress ?? []) {
+      nextEtat.progression[`${p.competence_id}:${p.focus_id}`] = { niveau: p.niveau, palier: p.palier };
+    }
+    setEtat(nextEtat);
+    setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
   const updateProfil = useCallback((patch: Partial<Profil> | ((prev: Profil) => Profil)) => {
     setProfil((prev) => (typeof patch === "function" ? patch(prev) : { ...prev, ...patch }));
@@ -114,11 +109,12 @@ export function MoteurProvider({ children }: { children: ReactNode }) {
       meilleureChaine: 0,
       today,
       hydrated,
+      reload,
       updateProfil,
       appliquerContrat,
       terminerSeance,
     }),
-    [profil, etat, today, hydrated, updateProfil, appliquerContrat, terminerSeance],
+    [profil, etat, today, hydrated, reload, updateProfil, appliquerContrat, terminerSeance],
   );
 
   return <MoteurContext.Provider value={value}>{children}</MoteurContext.Provider>;

@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { ProgressionStats } from "@/components/dashboard/progression-stats";
 import { useLevelUp } from "@/components/level-up/level-up-provider";
 import { TierGallery } from "@/components/level-up/tier-gallery";
 import { TierTheme } from "@/components/level-up/tier-theme";
@@ -8,6 +9,7 @@ import { SystemCharacter } from "@/components/system/system-character";
 import { CATALOGUE, PALIERS_PAR_NIVEAU } from "@/lib/moteur";
 import { useMoteur } from "@/lib/moteur-store";
 import { useProfile } from "@/lib/profile-store";
+import { useProgression } from "@/lib/progression/use-progression";
 import { TIERS, getTier, getTierIndex } from "@/lib/tiers";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -17,6 +19,7 @@ export default function ProgressionPage() {
   const { previewTier } = useLevelUp();
   const reduce = useReducedMotion() ?? false;
   const { etat, hydrated } = useMoteur();
+  const { data: snap, loading: snapLoading } = useProgression();
   const [preview, setPreview] = useState(profile.level || 1);
   const tier = getTier(preview);
 
@@ -36,7 +39,15 @@ export default function ProgressionPage() {
   return (
     <>
       <TierTheme level={preview} />
-      <DashboardHeader title="Progression" description="Le personnage et l'interface suivent ton palier." />
+      <DashboardHeader title="Progression" description="Power, classe, discipline, et l'historique d'XP." />
+
+      {snapLoading || !snap ? (
+        <p className="mb-5 text-sm text-muted-foreground">Chargement…</p>
+      ) : (
+        <div className="mb-5 grid gap-4 md:grid-cols-2">
+          <ProgressionStats snap={snap} />
+        </div>
+      )}
 
       <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
         <div className="flex flex-wrap items-end justify-between gap-6">
