@@ -6,6 +6,7 @@
  * Les tests 1, 2, 3 et 12 parlent à Supabase (clé anon).
  * Ils exigent TEST_USER_A_* et TEST_USER_B_* dans .env.local.
  */
+import { randomUUID } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { ajouterJours, enregistrerResultat, etatInitial, type SeancePrevue } from "../../lib/moteur";
 import { chaineDepuisJours } from "../../lib/progression/chaine";
@@ -71,15 +72,20 @@ async function signIn(email: string, password: string) {
   return { supabase, user: data.user };
 }
 
+function jourPasseAuHasard(): string {
+  return new Date(Date.UTC(2000, 0, 1) + Math.floor(Math.random() * 7300) * 86_400_000).toISOString().slice(0, 10);
+}
+
 async function createMission(supabase: SupabaseClient, userId: string, patch: Record<string, unknown> = {}) {
   const { data, error } = await supabase
     .from("missions")
     .insert({
       user_id: userId,
-      date_locale: jourLocal(new Date(), "Europe/Paris"),
-      type: "side",
+      // Le client ne supprime pas ses missions : un jour passé au hasard évite la limite de 12 par jour.
+      date_locale: jourPasseAuHasard(),
+      type: "daily",
       domaine: "discipline",
-      competence_id: "lot3-test",
+      competence_id: `lot3-test-${randomUUID().slice(0, 8)}`,
       titre: `lot3 ${Date.now()}`,
       description: "test lot 3",
       duree_min: 10,

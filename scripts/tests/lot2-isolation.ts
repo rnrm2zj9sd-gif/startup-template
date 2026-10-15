@@ -104,10 +104,11 @@ async function testIsolation(a: Awaited<ReturnType<typeof signIn>>, b: Awaited<R
     .from("missions")
     .insert({
       user_id: a.user.id,
-      date_locale: "2026-10-12",
+      // Le client ne peut pas supprimer de mission : jour passé au hasard et compétence unique
+      // évitent l'index daily du lot 3 et la limite de 12 missions par jour.
+      date_locale: new Date(Date.UTC(2000, 0, 1) + Math.floor(Math.random() * 7300) * 86_400_000).toISOString().slice(0, 10),
       type: "daily",
       domaine: "mind",
-      // Le client ne peut pas supprimer de mission : une compétence unique évite l'index daily du lot 3.
       competence_id: `${MARK}-${Date.now()}`,
       titre: `${MARK} mission`,
       description: MARK,

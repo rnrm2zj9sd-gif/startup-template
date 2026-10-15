@@ -31,7 +31,15 @@ const TESTS = [
   "« Reporter à demain » pose payload.reportee",
   "A ne voit jamais les missions de B",
   "Le client ne peut plus modifier une mission",
+  "Insertion de 999 minutes (ou 1) refusée",
+  "Difficulté inconnue refusée",
+  "Statut « terminee » et type « side » refusés à l'insertion",
+  "13e mission du jour refusée",
+  "user_id d'un autre joueur refusé (RLS)",
+  "L'onboarding et la génération normale fonctionnent toujours",
+  "Plafond 400 XP/jour tenu avec des missions gonflées",
 ];
+const constats: string[] = [];
 
 function noter(n: number, result: Status, proof: string) {
   rows.push({ n, test: TESTS[n - 1], result, proof });
@@ -274,6 +282,89 @@ async function main() {
         `dans le Daily de A : ${dansA} ; dans le journal de A : ${logB} ; A valide → ${valA.status}, reporte → ${repA.status}, modifie → ${(majA.data ?? []).length} ligne ; ` +
         `B lit une mission de A : ${(lectureB.data ?? []).length}, la valide → ${valB.status} ; mission de B intacte`);
     }
+
+    // 10 à 15 : limites d'insertion (trigger missions_limites_insert), sur le joueur neuf
+    const base = (patch: Record<string, unknown> = {}) => ({
+      user_id: neuf.id,
+      date_locale: today,
+      type: "daily",
+      domaine: "fitness",
+      competence_id: `lot4-lim-${randomUUID().slice(0, 8)}`,
+      titre: "lot4 limites",
+      description: "",
+      duree_min: 10,
+      difficulte: "moyen",
+      payload: { prevue: true, perso: false },
+      xp_prevu: 10,
+      statut: "a_faire",
+      ...patch,
+    });
+    const inserer = async (patch: Record<string, unknown> = {}) =>
+      s.client.from("missions").insert(base(patch)).select("id").maybeSingle();
+
+    const r999 = await inserer({ duree_min: 999 });
+    const rUne = await inserer({ duree_min: 1 });
+    noter(10, !!r999.error && !!rUne.error ? "OK" : "ÉCHEC",
+      `999 min → ${r999.error?.message ?? "ACCEPTÉ"} ; 1 min → ${rUne.error?.message ?? "ACCEPTÉ"}`);
+
+    const rDiff = await inserer({ difficulte: "legendaire" });
+    noter(11, rDiff.error ? "OK" : "ÉCHEC", `difficulté « legendaire » → ${rDiff.error?.message ?? "ACCEPTÉ"}`);
+
+    const rStatut = await inserer({ statut: "terminee" });
+    const rType = await inserer({ type: "side" });
+    noter(12, !!rStatut.error && !!rType.error ? "OK" : "ÉCHEC",
+      `statut terminee → ${rStatut.error?.message ?? "ACCEPTÉ"} ; type side → ${rType.error?.message ?? "ACCEPTÉ"}`);
+
+    const jourTest = (await db.query(`select ($1::date + 3)::text as d`, [today])).rows[0].d as string;
+    let acceptees = 0;
+    for (let i = 0; i < 12; i++) if (!(await inserer({ date_locale: jourTest })).error) acceptees++;
+    const r13 = await inserer({ date_locale: jourTest });
+    const nbJour = (await db.query(`select count(*)::int as n from public.missions where user_id = $1 and date_locale = $2`, [neuf.id, jourTest])).rows[0].n;
+    noter(13, acceptees === 12 && !!r13.error && nbJour === 12 ? "OK" : "ÉCHEC",
+      `${acceptees}/12 acceptées le ${jourTest} ; 13e → ${r13.error?.message ?? "ACCEPTÉE"} ; en base : ${nbJour}`);
+
+    const rUid = await s.client.from("missions").insert(base({ user_id: randomUUID() })).select("id").maybeSingle();
+    noter(14, rUid.error ? "OK" : "ÉCHEC", `user_id d'un autre → ${rUid.error?.message ?? "ACCEPTÉ"} (RLS missions_insert_own)`);
+
+    const premiereOk = r2.status === 200 && (r2.json.mission as Mission | undefined)?.type === "first";
+    noter(15, premiereOk && g1.status === 200 && g1.json.created === true && nbG1 > 0 ? "OK" : "ÉCHEC",
+      `onboarding → ${r2.status}, mission first créée ; generer → ${g1.status}, ${nbG1} missions daily créées (trigger actif)`);
+
+    // 16 : plafond de 400 XP avec beaucoup de missions gonflées (fuseau fixe)
+    const gonflees: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const { data } = await inserer({ duree_min: 60, difficulte: "difficile", payload: { prevue: true, perso: false, niveauMoyen: 4 } });
+      if (data) gonflees.push(data.id);
+    }
+    const credits: number[] = [];
+    for (const id of gonflees) credits.push(Number((await http(s, "POST", `/api/missions/${id}/valider`, { ressenti: "bien" })).json.xp ?? 0));
+    const xpJour = (await db.query(
+      `select coalesce(sum(montant), 0)::int as xp from public.xp_ledger where user_id = $1 and public.jour_local(created_at, 'Europe/Paris') = $2`,
+      [neuf.id, today],
+    )).rows[0].xp;
+    noter(16, gonflees.length === 5 && xpJour === 400 ? "OK" : "ÉCHEC",
+      `5 missions de 60 min « difficile » validées → +${credits.join(" / +")} XP ; total du jour en base : ${xpJour} (plafond 400)`);
+
+    // Constat (hors barème) : changer de fuseau pour qu'un minuit vienne de passer
+    await new Promise((r) => setTimeout(r, (61 - new Date().getUTCSeconds()) * 1000));
+    const utcMin = new Date().getUTCHours() * 60 + new Date().getUTCMinutes();
+    let est = (((0 - utcMin) % 1440) + 1440) % 1440;
+    if (est > 720) est -= 1440;
+    const tzMalin = `UTC${est >= 0 ? "-" : "+"}${Math.floor(Math.abs(est) / 60)}:${String(Math.abs(est) % 60).padStart(2, "0")}`;
+    const majTz = await s.client.from("profiles").update({ timezone: tzMalin }).eq("id", neuf.id).select("timezone");
+    const jourMalin = (await db.query(`select public.jour_local(now(), $1)::text as d`, [tzMalin])).rows[0].d as string;
+    const bonus: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const { data } = await inserer({ date_locale: jourMalin, duree_min: 60, difficulte: "difficile", payload: { prevue: true, perso: false, niveauMoyen: 4 } });
+      if (!data) continue;
+      const v = await http(s, "POST", `/api/missions/${data.id}/valider`, { ressenti: "bien" });
+      bonus.push(v.status === 200 ? `${v.json.xp}${v.json.plafond ? ` (plafond ${v.json.plafond})` : ""}` : `erreur ${v.status} ${v.json.error}`);
+    }
+    const xpTotal = (await db.query(`select coalesce(sum(montant), 0)::int as xp from public.xp_ledger where user_id = $1 and created_at > now() - interval '10 minutes'`, [neuf.id])).rows[0].xp;
+    constats.push(
+      `Fuseau : le client a pu écrire « ${tzMalin} » (${(majTz.data ?? []).length ? "accepté" : "refusé"}), jour local ${jourMalin}. ` +
+      `4 missions de plus validées → +${bonus.join(" / +")} XP. XP créditée en moins de 10 minutes : ${xpTotal}.`,
+    );
   } finally {
     if (missionB) await db.query(`delete from public.missions where id = $1`, [missionB]);
     await db.query(`delete from auth.users where id = $1`, [neuf.id]);
@@ -290,6 +381,7 @@ main()
     rows.sort((a, b) => a.n - b.n);
     console.log("\n| # | Test | Résultat | Preuve |\n|---|------|----------|--------|");
     for (const r of rows) console.log(`| ${r.n} | ${r.test} | ${r.result} | ${r.proof.replace(/\|/g, "/")} |`);
+    for (const c of constats) console.log(`\nConstat (hors barème) : ${c}`);
     const ok = rows.filter((r) => r.result === "OK").length;
     console.log(`\n${ok}/${rows.length} OK`);
     process.exitCode = ok === rows.length ? 0 : 1;
