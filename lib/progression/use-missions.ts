@@ -30,7 +30,7 @@ export function useMissionsJour() {
 
   const valider = useCallback(
     async (missionId: string, ressenti = "bien") => {
-      const res = await fetch("/api/missions/validate", {
+      const res = await fetch(`/api/missions/${missionId}/valider`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ missionId, ressenti }),

@@ -118,7 +118,7 @@ begin
     case
       when p_difficulte = 'facile' then 1
       when p_difficulte = 'difficile' then 4
-      else 2
+      else 3
     end
   );
 
@@ -174,7 +174,7 @@ declare
   niveau_apres integer;
   rang_avant text;
   rang_apres text;
-  focus_id text;
+  v_focus text;
   competence text;
   delta integer;
   niv integer;
@@ -286,16 +286,16 @@ begin
   end;
 
   if delta <> 0 and competence is not null then
-    for focus_id in
+    for v_focus in
       select jsonb_array_elements_text(coalesce(m.payload->'focusIds', '[]'::jsonb))
     loop
-      insert into public.skill_progress (user_id, competence_id, focus_id, niveau, palier)
-      values (uid, competence, focus_id, 1, 0)
+      insert into public.skill_progress as sp (user_id, competence_id, focus_id, niveau, palier)
+      values (uid, competence, v_focus, 1, 0)
       on conflict (user_id, competence_id, focus_id) do nothing;
 
-      select niveau, palier into niv, pal
-      from public.skill_progress
-      where user_id = uid and competence_id = competence and focus_id = focus_id
+      select sp.niveau, sp.palier into niv, pal
+      from public.skill_progress sp
+      where sp.user_id = uid and sp.competence_id = competence and sp.focus_id = v_focus
       for update;
 
       pal := pal + delta;
@@ -316,9 +316,9 @@ begin
         end if;
       end if;
 
-      update public.skill_progress
+      update public.skill_progress sp
       set niveau = niv, palier = pal
-      where user_id = uid and competence_id = competence and focus_id = focus_id;
+      where sp.user_id = uid and sp.competence_id = competence and sp.focus_id = v_focus;
     end loop;
   end if;
 

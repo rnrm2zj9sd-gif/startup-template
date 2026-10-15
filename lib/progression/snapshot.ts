@@ -1,8 +1,9 @@
 import { jourLocal } from "@/lib/temps";
+import { chaineDepuisJours } from "./chaine";
 import { calculerClasse } from "./classe";
 import { CLASSE_FENETRE_JOURS, DISCIPLINE_JOURS, DOMAINE_AFFICHE, type DomaineAffiche } from "./config";
-import { indiceDeDiscipline, type JourDiscipline } from "./discipline";
-import { niveauDepuisXp, progressionVersNiveauSuivant, rangDepuisNiveau } from "./niveau";
+import { indiceDeDiscipline } from "./discipline";
+import { progressionVersNiveauSuivant, rangDepuisNiveau } from "./niveau";
 import { calculerPower, niveauxDomainesDepuisXp, objectifValide } from "./power";
 import type { ProgressionSnapshot } from "./types";
 
@@ -23,6 +24,8 @@ export type MissionLite = {
   type: string;
   statut: string;
   goal_id: string | null;
+  /** Mission reportée puis éventuellement faite. */
+  reportee?: boolean;
 };
 
 export function snapshotDepuisTables(input: {
@@ -75,17 +78,24 @@ export function snapshotDepuisTables(input: {
   const niveauxDomaines = niveauxDomainesDepuisXp(xpParDomaine);
   const { niveau, xpDansNiveau, xpPourSuivant } = progressionVersNiveauSuivant(xpTotal);
 
-  const parJour = new Map<string, JourDiscipline>();
-  for (let i = DISCIPLINE_JOURS - 1; i >= 0; i--) {
-    parJour.set(decalerJour(aujourdHui, -i), { prevues: 0, terminees: 0 });
-  }
+  const debutDiscipline = decalerJour(aujourdHui, -(DISCIPLINE_JOURS - 1));
+  let prevues = 0;
+  let tenues = 0;
+  let reportees = 0;
+  let reporteesFaites = 0;
+  const joursActifs = new Set<string>();
   for (const m of input.missions) {
-    const jour = m.date_locale;
-    const slot = parJour.get(jour);
-    if (!slot) continue;
-    const prevue = m.type === "daily" || m.type === "weekly" || m.type === "main";
-    if (prevue) slot.prevues += 1;
-    if (m.statut === "terminee") slot.terminees += 1;
+    if (m.date_locale < debutDiscipline || m.date_locale > aujourdHui) continue;
+    const planifiee = m.type === "daily" || m.type === "weekly" || m.type === "main";
+    if (planifiee) {
+      prevues += 1;
+      if (m.statut === "terminee") tenues += 1;
+    }
+    if (m.statut === "terminee") joursActifs.add(m.date_locale);
+    if (m.reportee) {
+      reportees += 1;
+      if (m.statut === "terminee") reporteesFaites += 1;
+    }
   }
 
   return {
@@ -96,8 +106,8 @@ export function snapshotDepuisTables(input: {
     rang: rangDepuisNiveau(niveau),
     power: calculerPower({ niveauxDomaines, objectifsValides }),
     classe: calculerClasse({ missionsValidees, xp30jParDomaine: xp30j }),
-    discipline: indiceDeDiscipline([...parJour.values()]),
-    chaineJours: chaineDepuisJours(joursLedger, aujourdHui),
+    discipline: indiceDeDiscipline({ prevues, tenues, joursActifs: joursActifs.size, reportees, reporteesFaites }),
+    chaineJours: chaineDepuisJours(joursLedger),
     missionsValidees,
     xpParDomaine,
     niveauxDomaines,
@@ -111,14 +121,4 @@ export function decalerJour(dateISO: string, n: number): string {
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
-
-function chaineDepuisJours(jours: Set<string>, aujourdHui: string): number {
-  let d = jours.has(aujourdHui) ? aujourdHui : decalerJour(aujourdHui, -1);
-  let n = 0;
-  while (jours.has(d)) {
-    n += 1;
-    d = decalerJour(d, -1);
-  }
-  return n;
 }

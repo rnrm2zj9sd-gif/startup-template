@@ -122,14 +122,17 @@ async function testIsolation(a: Awaited<ReturnType<typeof signIn>>, b: Awaited<R
 
   const { error: skillErr, data: skill } = await a.supabase
     .from("user_skill_choices")
-    .insert({
-      user_id: a.user.id,
-      competence_id: MARK,
-      focus_ids: ["test"],
-      seances_semaine: 3,
-      minutes_max: 20,
-      mode: "guide",
-    })
+    .upsert(
+      {
+        user_id: a.user.id,
+        competence_id: MARK,
+        focus_ids: ["test"],
+        seances_semaine: 3,
+        minutes_max: 20,
+        mode: "guide",
+      },
+      { onConflict: "user_id,competence_id" },
+    )
     .select("id")
     .single();
   record(

@@ -1,19 +1,28 @@
-import { DISCIPLINE_JOUR_COMPLET, DISCIPLINE_JOUR_PARTIEL, DISCIPLINE_JOUR_VIDE, DISCIPLINE_JOURS } from "./config";
+import { DISCIPLINE_JOURS } from "./config";
 
-export type JourDiscipline = { prevues: number; terminees: number };
+export type DisciplineInput = {
+  /** Missions prévues (daily / weekly / main) sur la fenêtre. */
+  prevues: number;
+  /** Parmi elles, celles terminées. */
+  tenues: number;
+  /** Jours avec au moins une mission terminée. */
+  joursActifs: number;
+  /** Missions marquées reportées. */
+  reportees: number;
+  /** Parmi elles, celles ensuite terminées. */
+  reporteesFaites: number;
+  fenetre?: number;
+};
 
-export function indiceDeDiscipline(jours: JourDiscipline[]): number {
-  const slice = jours.slice(-DISCIPLINE_JOURS);
-  while (slice.length < DISCIPLINE_JOURS) slice.unshift({ prevues: 0, terminees: 0 });
-
-  let points = 0;
-  for (const j of slice) {
-    if (j.prevues <= 0) points += DISCIPLINE_JOUR_VIDE;
-    else if (j.terminees >= j.prevues) points += DISCIPLINE_JOUR_COMPLET;
-    else if (j.terminees > 0) points += DISCIPLINE_JOUR_PARTIEL;
-    else points += DISCIPLINE_JOUR_VIDE;
-  }
-
-  const max = DISCIPLINE_JOURS * DISCIPLINE_JOUR_COMPLET;
-  return Math.round((100 * points) / max);
+/**
+ * 0–100 sur 14 jours :
+ * 60 % engagements tenus, 25 % jours actifs, 15 % reportées puis faites.
+ */
+export function indiceDeDiscipline(input: DisciplineInput): number {
+  const fenetre = input.fenetre ?? DISCIPLINE_JOURS;
+  const engagements = input.prevues > 0 ? input.tenues / input.prevues : 0;
+  const actifs = fenetre > 0 ? input.joursActifs / fenetre : 0;
+  const reports = input.reportees > 0 ? input.reporteesFaites / input.reportees : 0;
+  const score = 0.6 * engagements + 0.25 * actifs + 0.15 * reports;
+  return Math.max(0, Math.min(100, Math.round(100 * score)));
 }

@@ -11,8 +11,11 @@ import {
   type DomaineAffiche,
 } from "./config";
 import { xpCumulePourAtteindre, niveauDepuisXp, progressionVersNiveauSuivant, rangDepuisNiveau, xpPourNiveau } from "./niveau";
+import { chaineDepuisJours } from "./chaine";
 import { calculerPower, niveauxDomainesDepuisXp, objectifValide } from "./power";
-import { appliquerPlafondQuotidien } from "./xp";
+import { appliquerPlafondQuotidien, calculerXpMission } from "./xp";
+import { ajouterJours, enregistrerResultat, etatInitial, type SeancePrevue } from "@/lib/moteur";
+import { jourLocal } from "@/lib/temps";
 
 describe("1. plusieurs niveaux d'un coup", () => {
   it("donne le niveau final après un gros gain", () => {
@@ -153,6 +156,83 @@ describe("5. simulation jours / rang", () => {
       assert.ok(j50 >= min && j50 <= max, `${rang} à 50 XP/j = ${j50}j hors [${min}, ${max}]`);
     }
     console.log(lignes.join("\n"));
+  });
+});
+
+describe("6-7. chaîne qui se fissure", () => {
+  function seance(date: string): SeancePrevue {
+    return {
+      date,
+      competenceId: "lot3",
+      competence: "Lot",
+      focusIds: [],
+      focusNoms: [],
+      exercices: [],
+      minutesTotal: 10,
+      xpEstime: 10,
+      missionPlancher: "",
+    };
+  }
+
+  function chaine(dates: string[]) {
+    let etat = etatInitial();
+    for (const date of dates) etat = enregistrerResultat(etat, seance(date), "bien");
+    return etat.chaineJours;
+  }
+
+  it("1 jour manqué conserve la chaîne", () => {
+    const debut = "2026-10-01";
+    const suite = [0, 1, 2, 3].map((i) => ajouterJours(debut, i));
+    assert.equal(chaine(suite), 4);
+    const apres = chaine([...suite, ajouterJours(debut, 5)]);
+    assert.equal(apres, 5);
+    assert.equal(chaineDepuisJours([...suite, ajouterJours(debut, 5)]), 5);
+  });
+
+  it("2 jours ou plus divisent la chaîne par 2", () => {
+    const debut = "2026-10-01";
+    const suite = [0, 1, 2, 3].map((i) => ajouterJours(debut, i));
+    const apres = chaine([...suite, ajouterJours(debut, 6)]);
+    assert.equal(apres, Math.floor(4 / 2) + 1);
+    assert.equal(chaineDepuisJours([...suite, ajouterJours(debut, 6)]), apres);
+  });
+});
+
+describe("8-9. rang", () => {
+  it("le rang ne descend pas quand l'XP ne fait qu'augmenter", () => {
+    const ordre = ["E", "D", "C", "B", "A", "S", "SS"];
+    let xp = 0;
+    let plancher = 0;
+    for (const gain of [0, 40, 180, 900, 4000, 25000]) {
+      xp += gain;
+      const idx = ordre.indexOf(rangDepuisNiveau(niveauDepuisXp(xp)));
+      assert.ok(idx >= plancher);
+      plancher = idx;
+    }
+  });
+});
+
+describe("difficulté 1.0 / 1.3 / 1.6", () => {
+  it("applique les trois multiplicateurs sur une mission prévue", () => {
+    assert.equal(
+      calculerXpMission({ dureeMin: 10, difficulte: "facile", prevue: true, perso: false }, { chaineJours: 0 }),
+      Math.round(10 * 1.0 * 1.25),
+    );
+    assert.equal(
+      calculerXpMission({ dureeMin: 10, difficulte: "moyen", prevue: true, perso: false }, { chaineJours: 0 }),
+      Math.round(10 * 1.3 * 1.25),
+    );
+    assert.equal(
+      calculerXpMission({ dureeMin: 10, difficulte: "difficile", prevue: true, perso: false }, { chaineJours: 0 }),
+      Math.round(10 * 1.6 * 1.25),
+    );
+  });
+});
+
+describe("11. jour local Europe/Paris", () => {
+  it("bascule à minuit Paris", () => {
+    assert.equal(jourLocal(new Date("2026-10-11T21:30:00Z"), "Europe/Paris"), "2026-10-11");
+    assert.equal(jourLocal(new Date("2026-10-11T22:30:00Z"), "Europe/Paris"), "2026-10-12");
   });
 });
 

@@ -9,7 +9,7 @@ create or replace function public._lot2_cascade_tmp_user()
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   uid uuid := gen_random_uuid();

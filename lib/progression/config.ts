@@ -68,6 +68,6 @@ export const NOMS_CLASSES: Record<DomaineAffiche | "balanced" | "initie", string
 
 export const DIFFICULTE_VERS_NIVEAU: Record<string, number> = {
   facile: 1,
-  moyen: 2,
+  moyen: 3,
   difficile: 4,
 };
