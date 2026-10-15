@@ -32,7 +32,8 @@ export function SystemPanel({ className }: { className?: string }) {
       <div className="relative mx-auto flex min-h-[360px] w-full max-w-md flex-col items-center justify-end px-5 pb-5 pt-6 md:min-h-[400px] md:pb-6">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-10 bottom-24 top-4 rounded-full bg-brand-purple/20 blur-3xl motion-safe:animate-halo"
+          className="pointer-events-none absolute inset-x-10 bottom-24 top-4 rounded-full blur-3xl motion-safe:animate-halo"
+          style={{ background: "rgba(var(--tier-rgb), 0.2)" }}
         />
 
         <div className="relative flex h-[280px] w-full items-end justify-center pb-4 md:h-[320px]">
@@ -43,7 +44,7 @@ export function SystemPanel({ className }: { className?: string }) {
             animate={inView && !reduceMotion ? { y: [0, -5, 0] } : undefined}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           >
-            <SystemCharacter gender={profile.gender} size={300} priority />
+            <SystemCharacter gender={profile.gender} level={profile.level} size={300} priority />
           </motion.div>
         </div>
 
@@ -67,7 +68,7 @@ export function SystemPanel({ className }: { className?: string }) {
             className="mt-2.5 h-1 overflow-hidden rounded-full bg-white/5"
           >
             <motion.div
-              className="h-full rounded-full bg-brand-purple"
+              className="h-full rounded-full bg-primary"
               initial={reduceMotion ? false : { width: 0 }}
               animate={{ width: inView ? `${progress}%` : 0 }}
               transition={

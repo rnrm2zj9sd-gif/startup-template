@@ -1,12 +1,17 @@
+import { CharacterAura } from "@/components/system/character-aura";
+import "@/components/level-up/level-up.css";
 import { cn } from "@/lib/utils";
+import { getTier, getTierIndex, type Tier } from "@/lib/tiers";
 import type { Gender } from "@/types/player";
 import Image from "next/image";
 import type { CSSProperties } from "react";
 
 interface SystemCharacterProps {
   gender: Gender;
-  /** Hauteur affichée en pixels (les visuels sont au ratio 3:4). */
   size: number;
+  level?: number;
+  /** Aura + lueur du palier (désactiver sur les miniatures denses). */
+  aura?: boolean;
   priority?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -17,29 +22,88 @@ const LABELS: Record<Gender, string> = {
   female: "Personnage féminin",
 };
 
+function wash(tier: Tier, index: number) {
+  const strength = 0.5 + index * 0.06;
+  return `linear-gradient(180deg, rgba(${tier.rgb}, ${Math.min(0.82, strength)}) 8%, rgba(${tier.rgb}, 0.22) 100%)`;
+}
+
 /**
- * Personnage du joueur (`/character/male.png` ou `/character/female.png`,
- * fond transparent). Même visuel partout : bloc Système, sidebar, inscription.
+ * Mannequin System teinté par le palier : même PNG, matière + aura.
  */
 export function SystemCharacter({
   gender,
   size,
+  level,
+  aura = true,
   priority = false,
   className,
   style,
 }: SystemCharacterProps) {
   const width = Math.round(size * 0.75);
+  const src = `/character/${gender}.png`;
+  const tier = level != null ? getTier(level) : null;
+  const index = level != null ? getTierIndex(level) : -1;
+  const mask: CSSProperties | undefined = tier
+    ? {
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }
+    : undefined;
+
   return (
-    <Image
-      src={`/character/${gender}.png`}
-      alt={LABELS[gender]}
-      width={width}
-      height={size}
-      priority={priority}
-      unoptimized
-      className={cn("max-w-none select-none object-contain", className)}
+    <span
+      className={cn("relative inline-block select-none", className)}
       style={{ width, height: size, ...style }}
-      draggable={false}
-    />
+    >
+      {tier && aura && <CharacterAura tier={tier} compact={size < 220} />}
+
+      <Image
+        src={src}
+        alt={LABELS[gender]}
+        width={width}
+        height={size}
+        priority={priority}
+        unoptimized
+        className="relative z-10 max-w-none object-contain"
+        style={{
+          width,
+          height: size,
+          filter: tier ? `drop-shadow(0 0 ${14 + index * 3}px rgba(${tier.rgb}, 0.55))` : undefined,
+        }}
+        draggable={false}
+      />
+
+      {tier && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-20"
+          style={{
+            background: wash(tier, index),
+            mixBlendMode: "color",
+            ...mask,
+          }}
+        />
+      )}
+
+      {tier && (
+        <span aria-hidden className="pointer-events-none absolute inset-0 z-30 overflow-hidden" style={mask}>
+          <span className="char-shimmer absolute inset-y-0 -left-1/2 w-1/2" />
+        </span>
+      )}
+
+      {tier && index >= 5 && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[5%] z-30 h-[9%] w-[40%] -translate-x-1/2 rounded-full border motion-safe:animate-halo"
+          style={{ borderColor: `rgba(${tier.rgb}, 0.55)`, boxShadow: `0 0 18px rgba(${tier.rgb}, 0.35)` }}
+        />
+      )}
+    </span>
   );
 }

@@ -1,0 +1,25 @@
+---
+description: Paliers visuels THEMILION (Bronze → Galaxie), couleur d'interface par palier, animation et son de montée de niveau.
+globs:
+alwaysApply: true
+---
+
+# Paliers visuels — règles
+
+## Source unique
+- `lib/tiers.ts` définit les 8 paliers : Bronze (1–9), Argent (10–19), Or (20–34), Émeraude (35–49), Jade (50–64), Améthyste (65–79), Diamant (80–99), Galaxie (100+).
+- Ne jamais redéfinir ces tranches, noms ou couleurs ailleurs : importer `TIERS`, `getTier`, `getTierIndex`, `getNextTier`, `tierImage`, `tierProgress`.
+- Images : `public/character/tiers/<male|female>-<palier>.webp` (via `tierImage`). Les fichiers actuels sont provisoires (basse résolution) et seront remplacés par des rendus définitifs avec les mêmes noms.
+- Les rangs E → SS (`RANG_SEUILS`) restent un système séparé. Ne pas les fusionner avec les paliers sans demande explicite.
+
+## Couleur d'interface
+- `<TierTheme />` (components/level-up/tier-theme.tsx) applique la couleur du palier à `--primary`, `--ring`, `--accent`, `--sidebar-primary` et expose `--tier`, `--tier-rgb`, `--tier-on`.
+- Dans les composants, utiliser `bg-primary`, `text-primary`, `ring-primary`, ou `var(--tier)` / `rgba(var(--tier-rgb), x)`. Ne plus coder en dur le violet ou le bleu pour les accents.
+- Le logo THEMILION SYSTEM garde ses couleurs de marque.
+
+## Montée de niveau
+- `<LevelUpProvider>` (sous `<ProfileProvider>`) détecte toute hausse de `profile.level` et affiche `LevelUpOverlay`.
+- Simple niveau : animation courte du palier en cours. Changement de palier : version complète (charge, impact, transformation du personnage, nom du palier).
+- Son : `lib/level-up-sound.ts`, synchronisé avec l'impact via `impactDelay()`. Réglage on/off via `isSoundEnabled()` / `setSoundEnabled()` (à exposer dans Paramètres).
+- Toujours respecter `prefers-reduced-motion` (déjà géré : pas de tremblement ni de particules).
+- La maquette de référence est `design/Paliers.html`.

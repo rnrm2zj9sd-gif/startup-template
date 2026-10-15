@@ -1,0 +1,53 @@
+/* THEMILION SYSTEM — Animations de montée de niveau et thème de palier */
+
+/* Valeurs par défaut (remplacées par <TierTheme /> selon le niveau) */
+:root {
+  --tier: #8b5cf6;
+  --tier-rgb: 139, 92, 246;
+  --tier-on: #ffffff;
+}
+
+/* ---------- Effets par palier ---------- */
+@keyframes lu-rise { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 1 } 100% { transform: translate(var(--dx), -70vh); opacity: 0 } }
+@keyframes lu-scan { 0% { top: -8% } 100% { top: 108% } }
+@keyframes lu-spin { to { transform: translate(-50%, -50%) rotate(360deg) } }
+@keyframes lu-grow { from { opacity: 0; transform: scale(.3) } to { opacity: 1; transform: scale(1) } }
+@keyframes lu-stream { 0% { transform: translateY(45vh); opacity: 0 } 25% { opacity: 1 } 100% { transform: translateY(-65vh); opacity: 0 } }
+@keyframes lu-ripple { 0% { transform: translate(-50%, -50%) scale(.08); opacity: .9 } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0 } }
+@keyframes lu-shard { 0% { transform: translate(-50%, -50%) rotate(45deg) scale(.2); opacity: 0 } 12% { opacity: 1 } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(225deg) scale(1); opacity: 0 } }
+@keyframes lu-twinkle { 0%, 100% { opacity: .12 } 50% { opacity: 1 } }
+@keyframes lu-orbit { to { transform: rotate(360deg) } }
+@keyframes lu-pulse { 0%, 100% { opacity: .55; transform: translate(-50%, -50%) scale(.96) } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04) } }
+
+.lu-rise { animation: lu-rise var(--dur) ease-out var(--delay) infinite }
+.lu-scan { animation: lu-scan 1.6s cubic-bezier(.4, 0, .2, 1) var(--delay, .3s) 2 both }
+.lu-rays { animation: lu-spin 24s linear infinite }
+.lu-grow { animation: lu-grow 1.4s cubic-bezier(.2, .8, .2, 1) var(--delay, .2s) both }
+.lu-stream { animation: lu-stream var(--dur) ease-in var(--delay) infinite }
+.lu-ripple { animation: lu-ripple 3.2s ease-out var(--delay) infinite }
+.lu-shock { animation: lu-ripple 1.6s cubic-bezier(.2, .8, .2, 1) var(--delay) infinite }
+.lu-shard { animation: lu-shard 1.8s cubic-bezier(.15, .8, .2, 1) var(--delay) both }
+.lu-twinkle { animation: lu-twinkle var(--dur) ease-in-out var(--delay) infinite }
+.lu-orbit { animation: lu-orbit 9s linear infinite }
+.lu-pulse { animation: lu-pulse 2.4s ease-in-out infinite }
+
+@keyframes char-shimmer-slide {
+  0% { transform: translateX(-30%); opacity: 0 }
+  18% { opacity: 0.7 }
+  42% { opacity: 0 }
+  100% { transform: translateX(160%); opacity: 0 }
+}
+
+.char-shimmer {
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.55) 48%, transparent 72%);
+  animation: char-shimmer-slide 4.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .char-shimmer { animation: none; opacity: 0 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lu-rise, .lu-scan, .lu-stream, .lu-shard { display: none }
+  .lu-rays, .lu-grow, .lu-ripple, .lu-shock, .lu-twinkle, .lu-orbit, .lu-pulse { animation: none !important; opacity: 1 }
+}
