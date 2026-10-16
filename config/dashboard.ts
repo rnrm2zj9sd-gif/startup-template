@@ -3,6 +3,7 @@ import {
   BookOpen,
   Hexagon,
   LayoutDashboard,
+  Library,
   Settings,
   Sparkles,
   TrendingUp,
@@ -23,6 +24,7 @@ export const dashboardNav: NavItem[] = [
 ];
 
 export const dashboardNavExtra: NavItem[] = [
+  { label: "Mes exercices", href: "/catalogue", icon: Library },
   { label: "Paramètres", href: "/dashboard/parametres", icon: Settings },
 ];
 

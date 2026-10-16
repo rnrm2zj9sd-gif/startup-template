@@ -302,8 +302,17 @@ async function main() {
       statut: "a_faire",
       ...patch,
     });
-    const inserer = async (patch: Record<string, unknown> = {}) =>
-      s.client.from("missions").insert(base(patch)).select("id").maybeSingle();
+    const inserer = async (patch: Record<string, unknown> = {}) => {
+      const row = base(patch);
+      const diff = String(row.difficulte ?? "moyen");
+      const exo = diff === "difficile" ? "hollow-hold" : diff === "facile" ? "crunch" : "planche";
+      const payload = {
+        exerciceId: exo,
+        ...(row.payload && typeof row.payload === "object" ? (row.payload as Record<string, unknown>) : {}),
+      };
+      if (!payload.exerciceId) payload.exerciceId = exo;
+      return s.client.from("missions").insert({ ...row, payload }).select("id").maybeSingle();
+    };
 
     const r999 = await inserer({ duree_min: 999 });
     const rUne = await inserer({ duree_min: 1 });

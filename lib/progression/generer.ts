@@ -10,9 +10,12 @@ import { DOMAINE_MOTEUR_VERS_AFFICHE, type DomaineAffiche } from "./config";
 import { profilDepuisLignes, type ContratPersiste } from "./contrat";
 import { decalerJour } from "./snapshot";
 
-export function domaineAfficheDe(competenceId: string): DomaineAffiche {
+export function domaineAfficheDe(competenceId: string, catalog?: ContratPersiste | null): DomaineAffiche {
   const domaine = CATALOGUE[competenceId]?.domaine;
-  return (domaine && DOMAINE_MOTEUR_VERS_AFFICHE[domaine]) || "life";
+  if (domaine && DOMAINE_MOTEUR_VERS_AFFICHE[domaine]) return DOMAINE_MOTEUR_VERS_AFFICHE[domaine];
+  const perso = catalog?.catalogPerso?.competences.find((c) => c.id === competenceId);
+  if (perso && DOMAINE_MOTEUR_VERS_AFFICHE[perso.domaine]) return DOMAINE_MOTEUR_VERS_AFFICHE[perso.domaine];
+  return "life";
 }
 
 export function difficulteDepuisNiveau(niveau: number): "facile" | "moyen" | "difficile" {
@@ -21,34 +24,44 @@ export function difficulteDepuisNiveau(niveau: number): "facile" | "moyen" | "di
   return "moyen";
 }
 
+function niveauExercice(competenceId: string, exerciceId: string, catalog?: ContratPersiste | null): number {
+  const off = CATALOGUE[competenceId]?.exercices.find((x) => x.id === exerciceId);
+  if (off) return off.niveau;
+  const perso = catalog?.catalogPerso?.exercices.find((e) => e.id === exerciceId);
+  if (perso?.difficulte === "facile") return 1;
+  if (perso?.difficulte === "difficile") return 3;
+  return 2;
+}
+
 export function ligneDepuisSeance(input: {
   userId: string;
   seance: SeancePrevue;
   type?: "daily" | "weekly";
+  catalog?: ContratPersiste | null;
 }) {
-  const { seance, userId } = input;
-  const niveaux = seance.exercices.map((e) => {
-    const src = CATALOGUE[seance.competenceId]?.exercices.find((x) => x.id === e.exerciceId);
-    return src?.niveau ?? 2;
-  });
+  const { seance, userId, catalog } = input;
+  const niveaux = seance.exercices.map((e) => niveauExercice(seance.competenceId, e.exerciceId, catalog));
   const niveauMoyen = niveaux.length ? niveaux.reduce((a, b) => a + b, 0) / niveaux.length : 2;
+  const exerciceIds = seance.exercices.map((e) => e.exerciceId);
 
   return {
     user_id: userId,
     date_locale: seance.date,
     type: input.type ?? "daily",
-    domaine: domaineAfficheDe(seance.competenceId),
+    domaine: domaineAfficheDe(seance.competenceId, catalog),
     competence_id: seance.competenceId,
     titre: `${seance.competence} : ${seance.focusNoms.join(" + ")}`,
     description: seance.missionPlancher,
-    duree_min: Math.max(1, Math.round(seance.minutesTotal)),
+    duree_min: Math.max(2, Math.round(seance.minutesTotal)),
     difficulte: difficulteDepuisNiveau(niveauMoyen),
     payload: {
       source: "moteur",
       prevue: true,
-      perso: false,
+      perso: seance.exercices.some((e) => e.perso),
       focusIds: seance.focusIds,
       niveauMoyen,
+      exerciceId: exerciceIds[0] ?? null,
+      exerciceIds,
       seance,
     },
     xp_prevu: seance.xpEstime,

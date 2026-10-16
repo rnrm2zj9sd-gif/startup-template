@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { PALIERS_PAR_NIVEAU } from "@/lib/moteur";
 import { useMoteur } from "@/lib/moteur-store";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -87,7 +88,10 @@ export default function CompetencesPage() {
       />
 
       <p className="mb-5 rounded-2xl border border-border bg-panel px-5 py-3 text-sm text-muted-foreground">
-        Aujourd&apos;hui reste tel quel. Les missions nouvelles suivront tes compétences à partir de demain.
+        Aujourd&apos;hui reste tel quel. Les missions nouvelles suivront tes compétences à partir de demain.{" "}
+        <Link href="/catalogue" className="text-primary">
+          Mes exercices
+        </Link>
       </p>
 
       {!actives ? (

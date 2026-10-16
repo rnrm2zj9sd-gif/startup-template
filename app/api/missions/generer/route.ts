@@ -76,7 +76,13 @@ export async function POST() {
       const prises = new Set((dejaLa ?? []).map((m) => m.competence_id));
       const lignes = (plan.jour?.seances ?? [])
         .filter((s) => !prises.has(s.competenceId))
-        .map((seance) => ligneDepuisSeance({ userId: user.id, seance }));
+        .map((seance) =>
+          ligneDepuisSeance({
+            userId: user.id,
+            seance,
+            catalog: (catalogRow?.data ?? null) as ContratPersiste | null,
+          }),
+        );
 
       if (lignes.length) {
         const { error } = await supabase.from("missions").insert(lignes);

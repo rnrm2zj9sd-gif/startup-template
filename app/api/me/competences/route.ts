@@ -1,7 +1,9 @@
+import { catalogueDe } from "@/lib/catalogue/perso";
 import { CATALOGUE } from "@/lib/moteur";
 import { requireUser, rpcErrorStatus } from "@/lib/progression/auth-api";
 import { domaineAfficheDe } from "@/lib/progression/generer";
 import { DOMAINE_LABELS } from "@/lib/progression/config";
+import type { ContratPersiste } from "@/lib/progression/contrat";
 import { NextResponse } from "next/server";
 
 const MAX = 5;
@@ -26,27 +28,32 @@ export async function GET() {
   const { supabase, user, response } = await requireUser();
   if (!user) return response;
 
-  const [{ data: choix, error: e1 }, { data: progress, error: e2 }] = await Promise.all([
+  const [{ data: choix, error: e1 }, { data: progress, error: e2 }, { data: catalogRow }] = await Promise.all([
     supabase.from("user_skill_choices").select("competence_id, focus_ids").eq("user_id", user.id).order("competence_id"),
     supabase.from("skill_progress").select("competence_id, focus_id, niveau, palier").eq("user_id", user.id),
+    supabase.from("custom_catalog").select("data").eq("user_id", user.id).maybeSingle(),
   ]);
   if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
   if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
 
+  const catalog = (catalogRow?.data ?? null) as ContratPersiste | null;
+  const perso = catalogueDe(catalog);
   const prog = (progress ?? []) as ProgressRow[];
   const actives = (choix ?? []).map((c) => {
     const competence = CATALOGUE[c.competence_id];
-    const domaine = domaineAfficheDe(c.competence_id);
-    const focusChoisis = c.focus_ids?.length ? c.focus_ids : (competence?.focus.map((f) => f.id) ?? []);
+    const persoComp = perso.competences.find((x) => x.id === c.competence_id);
+    const domaine = domaineAfficheDe(c.competence_id, catalog);
+    const focusParDefaut = competence?.focus.map((f) => f.id) ?? perso.focus.filter((f) => f.competenceId === c.competence_id).map((f) => f.id);
+    const focusChoisis = c.focus_ids?.length ? c.focus_ids : focusParDefaut;
     const zones = focusChoisis.map((id) => {
-      const src = competence?.focus.find((f) => f.id === id);
+      const src = competence?.focus.find((f) => f.id === id) ?? perso.focus.find((f) => f.id === id);
       const p = prog.find((r) => r.competence_id === c.competence_id && r.focus_id === id);
       return { id, nom: src?.nom ?? id, niveau: p?.niveau ?? 1, palier: p?.palier ?? 0 };
     });
     const { niveau, palier } = resumeProgression(prog, c.competence_id, focusChoisis);
     return {
       id: c.competence_id,
-      nom: competence?.nom ?? c.competence_id,
+      nom: competence?.nom ?? persoComp?.nom ?? c.competence_id,
       domaine,
       domaineLabel: DOMAINE_LABELS[domaine],
       niveau,
@@ -56,13 +63,22 @@ export async function GET() {
   });
 
   const prises = new Set(actives.map((a) => a.id));
-  const catalogue = Object.values(CATALOGUE).map((c) => ({
-    id: c.id,
-    nom: c.nom,
-    domaine: domaineAfficheDe(c.id),
-    domaineLabel: DOMAINE_LABELS[domaineAfficheDe(c.id)],
-    active: prises.has(c.id),
-  }));
+  const catalogue = [
+    ...Object.values(CATALOGUE).map((c) => ({
+      id: c.id,
+      nom: c.nom,
+      domaine: domaineAfficheDe(c.id, catalog),
+      domaineLabel: DOMAINE_LABELS[domaineAfficheDe(c.id, catalog)],
+      active: prises.has(c.id),
+    })),
+    ...perso.competences.map((c) => ({
+      id: c.id,
+      nom: c.nom,
+      domaine: domaineAfficheDe(c.id, catalog),
+      domaineLabel: DOMAINE_LABELS[domaineAfficheDe(c.id, catalog)],
+      active: prises.has(c.id),
+    })),
+  ];
 
   return NextResponse.json({ actives, catalogue, min: MIN, max: MAX });
 }
@@ -73,8 +89,12 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as { competenceId?: string; focusIds?: string[] } | null;
   const competenceId = body?.competenceId?.trim() ?? "";
+  const { data: catalogRow } = await supabase.from("custom_catalog").select("data").eq("user_id", user.id).maybeSingle();
+  const catalog = (catalogRow?.data ?? null) as ContratPersiste | null;
+  const perso = catalogueDe(catalog);
   const competence = CATALOGUE[competenceId];
-  if (!competence) return NextResponse.json({ error: "compétence inconnue" }, { status: 400 });
+  const persoComp = perso.competences.find((c) => c.id === competenceId);
+  if (!competence && !persoComp) return NextResponse.json({ error: "compétence inconnue" }, { status: 400 });
 
   const { count } = await supabase
     .from("user_skill_choices")
@@ -90,7 +110,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "limite atteinte : 5 compétences actives" }, { status: 409 });
   }
 
-  const focusIds = body?.focusIds?.length ? body.focusIds : competence.focus.map((f) => f.id);
+  const focusParDefaut = competence?.focus.map((f) => f.id) ?? perso.focus.filter((f) => f.competenceId === competenceId).map((f) => f.id);
+  const focusIds = body?.focusIds?.length ? body.focusIds : focusParDefaut;
   const { error } = await supabase.from("user_skill_choices").upsert(
     {
       user_id: user.id,

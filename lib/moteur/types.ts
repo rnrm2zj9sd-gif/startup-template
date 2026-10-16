@@ -119,6 +119,8 @@ export interface ExercicePerso {
   versionPlancher?: string;
   materiel?: Materiel[];
   progression: boolean;
+  /** Lien https optionnel. Jamais interprété comme HTML. */
+  lien?: string;
 }
 
 export interface FocusPerso {

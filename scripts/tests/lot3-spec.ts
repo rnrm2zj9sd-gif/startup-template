@@ -6,7 +6,7 @@
  * Les tests 1, 2, 3 et 12 parlent à Supabase (clé anon).
  * Ils exigent TEST_USER_A_* et TEST_USER_B_* dans .env.local.
  */
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import pg from "pg";
 import { ajouterJours, enregistrerResultat, etatInitial, type SeancePrevue } from "../../lib/moteur";
@@ -88,6 +88,27 @@ async function openDb() {
 }
 
 const missionsTest: string[] = [];
+const joueursTemp: string[] = [];
+
+async function creerJoueurNeuf(db: pg.Client, { id, email, password }: { id: string; email: string; password: string }) {
+  await db.query(
+    `insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+       raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+       confirmation_token, recovery_token, email_change_token_new, email_change,
+       email_change_token_current, phone_change, phone_change_token, reauthentication_token)
+     values ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2,
+       extensions.crypt($3, extensions.gen_salt('bf')), now(),
+       '{"provider":"email","providers":["email"]}', '{"pseudo":"Lot3"}', now(), now(),
+       '', '', '', '', '', '', '', '')`,
+    [id, email, password],
+  );
+  await db.query(
+    `insert into auth.identities (id, provider_id, user_id, identity_data, provider, created_at, updated_at)
+     values (gen_random_uuid(), $1::text, $1::uuid, jsonb_build_object('sub', $1::text, 'email', $2::text), 'email', now(), now())`,
+    [id, email],
+  );
+  joueursTemp.push(id);
+}
 
 async function createMission(db: pg.Client, userId: string, patch: Record<string, unknown> = {}) {
   const row = {
@@ -298,22 +319,35 @@ async function testsBase() {
   }
 
   try {
-    const mission = await createMission(db, a.user.id);
+    const idT = randomUUID();
+    const emailT = `lot3-t-${idT.slice(0, 8)}@themilion.test`;
+    const passwordT = randomBytes(18).toString("base64url");
+    await creerJoueurNeuf(db, { id: idT, email: emailT, password: passwordT });
+    const t = await signIn(emailT, passwordT);
+    const jour = jourLocal(new Date(), "Europe/Paris");
+    const chaine = await db.query(`select public.chaine_jours_of($1, 'Europe/Paris', $2::date) as n`, [idT, jour]);
+    const mission = await createMission(db, idT);
     const attendu = calculerXpMission(
       { dureeMin: 10, difficulte: "moyen", prevue: true, perso: false },
       { chaineJours: 0 },
     );
-    const { data, error } = await a.supabase.rpc("validate_mission", {
+    const { data, error } = await t.supabase.rpc("validate_mission", {
       p_mission_id: mission.id,
       p_ressenti: "bien",
       p_note: "",
     });
     const xp = (data as { xp?: number } | null)?.xp;
-    const { data: led } = await a.supabase.from("xp_ledger").select("id").eq("mission_id", mission.id);
-    const { data: val } = await a.supabase.from("mission_validations").select("id").eq("mission_id", mission.id);
-    const { data: mis } = await a.supabase.from("missions").select("statut").eq("id", mission.id).maybeSingle();
+    const { data: led } = await t.supabase.from("xp_ledger").select("id").eq("mission_id", mission.id);
+    const { data: val } = await t.supabase.from("mission_validations").select("id").eq("mission_id", mission.id);
+    const { data: mis } = await t.supabase.from("missions").select("statut").eq("id", mission.id).maybeSingle();
     const ok = !error && xp === attendu && (led?.length ?? 0) === 1 && (val?.length ?? 0) === 1 && mis?.statut === "terminee";
-    record(1, "validation normale", ok ? "OK" : "ÉCHEC", `xp=${xp ?? "?"} attendu=${attendu} statut=${mis?.statut ?? "?"}`);
+    record(
+      1,
+      "validation normale",
+      ok ? "OK" : "ÉCHEC",
+      `joueur neuf chaîne=${chaine.rows[0].n} ; 10×1,3×1,25×1,00=${attendu} ; xp=${xp ?? "?"} statut=${mis?.statut ?? "?"}`,
+    );
+    await t.supabase.auth.signOut();
   } catch (err) {
     record(1, "validation normale", "ÉCHEC", err instanceof Error ? err.message : "erreur");
   }
@@ -357,6 +391,9 @@ async function testsBase() {
     if (missionsTest.length) {
       await db.query(`delete from public.xp_ledger where mission_id = any($1::uuid[])`, [missionsTest]);
       await db.query(`delete from public.missions where id = any($1::uuid[])`, [missionsTest]);
+    }
+    if (joueursTemp.length) {
+      await db.query(`delete from auth.users where id = any($1::uuid[])`, [joueursTemp]);
     }
     await db.end();
   }
