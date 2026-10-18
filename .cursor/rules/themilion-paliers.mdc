@@ -10,7 +10,7 @@ alwaysApply: true
 - `lib/tiers.ts` définit les 8 paliers : Bronze (1–9), Argent (10–19), Or (20–34), Émeraude (35–49), Jade (50–64), Améthyste (65–79), Diamant (80–99), Galaxie (100+).
 - Ne jamais redéfinir ces tranches, noms ou couleurs ailleurs : importer `TIERS`, `getTier`, `getTierIndex`, `getNextTier`, `tierImage`, `tierProgress`.
 - Images : `public/character/tiers/<male|female>-<palier>.webp` (via `tierImage`). Les fichiers actuels sont provisoires (basse résolution) et seront remplacés par des rendus définitifs avec les mêmes noms.
-- Les rangs E → SS (`RANG_SEUILS`) restent un système séparé. Ne pas les fusionner avec les paliers sans demande explicite.
+- Les rangs E → S (`RANG_SEUILS` : D@10, C@25, B@45, A@70, S@100) restent un système séparé. Ne pas les fusionner avec les paliers sans demande explicite.
 
 ## Couleur d'interface
 - `<TierTheme />` (components/level-up/tier-theme.tsx) applique la couleur du palier à `--primary`, `--ring`, `--accent`, `--sidebar-primary` et expose `--tier`, `--tier-rgb`, `--tier-on`.

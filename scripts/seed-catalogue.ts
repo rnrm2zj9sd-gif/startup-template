@@ -1,16 +1,15 @@
 /**
  * Génère les INSERT rejouables de catalogue_officiel à partir de lib/moteur.
- * Découpe en fichiers supabase/apply de moins de 80 lignes.
+ * Écrit supabase/schema/06_donnees.sql (rejouable).
  *
  *   pnpm db:seed-catalogue
  */
-import { mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { CATALOGUE } from "../lib/moteur";
 import { difficulteDepuisNiveau } from "../lib/progression/generer";
 
-const DIR = path.join(process.cwd(), "supabase/apply");
-const PAR_FICHIER = 70;
+const FICHIER = path.join(process.cwd(), "supabase/schema/06_donnees.sql");
 
 function sql(valeur: string): string {
   return `'${valeur.replace(/'/g, "''")}'`;
@@ -30,26 +29,10 @@ function lignes(): string[] {
 }
 
 function main() {
-  for (const f of readdirSync(DIR)) {
-    if (/^4[6-9]_catalogue_officiel_seed_/.test(f) || /^5\d_catalogue_officiel_seed_/.test(f)) unlinkSync(path.join(DIR, f));
-  }
   const toutes = lignes();
-  let n = 0;
-  for (let i = 0; i < toutes.length; i += PAR_FICHIER) {
-    n += 1;
-    const bloc = toutes.slice(i, i + PAR_FICHIER);
-    const fichier = path.join(DIR, `46_catalogue_officiel_seed_${String(n).padStart(2, "0")}.sql`);
-    const corps = [
-      `-- Catalogue officiel, partie ${n} (généré par pnpm db:seed-catalogue, rejouable).`,
-      ...bloc,
-      "",
-    ].join("\n");
-    if (corps.split("\n").length > 80) throw new Error(`fichier trop long : ${fichier}`);
-    writeFileSync(fichier, corps);
-    console.log(`${path.basename(fichier)} : ${bloc.length} exercices`);
-  }
-  console.log(`Total : ${toutes.length} exercices.`);
+  writeFileSync(FICHIER, `-- Catalogue officiel (rejouable, on conflict update).\n${toutes.join("\n")}\n`);
+  console.log(`schema/06_donnees.sql : ${toutes.length} exercices.`);
 }
 
-mkdirSync(DIR, { recursive: true });
+mkdirSync(path.dirname(FICHIER), { recursive: true });
 main();

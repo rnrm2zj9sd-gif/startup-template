@@ -135,17 +135,14 @@ async function testIsolation(
 
   const { error: skillErr, data: skill } = await a.supabase
     .from("user_skill_choices")
-    .upsert(
-      {
-        user_id: a.user.id,
-        competence_id: MARK,
-        focus_ids: ["test"],
-        seances_semaine: 3,
-        minutes_max: 20,
-        mode: "guide",
-      },
-      { onConflict: "user_id,competence_id" },
-    )
+    .insert({
+      user_id: a.user.id,
+      competence_id: MARK,
+      focus_ids: ["test"],
+      seances_semaine: 3,
+      minutes_max: 20,
+      mode: "guide",
+    })
     .select("id")
     .single();
   record(
@@ -305,7 +302,7 @@ async function testReadonly(a: Awaited<ReturnType<typeof signIn>>) {
     const { error: insErr } = await a.supabase.from(table.name).insert(table.insert);
     record(`2 A n'insère pas ${table.name}`, insErr ? "OK" : "ÉCHEC", insErr?.message ?? "INSERT accepté");
 
-    const { data: upd, error: updErr } = await a.supabase.from(table.name).update(table.patch).eq("user_id", a.user.id).select("*");
+    const { data: upd, error: updErr } = await a.supabase.from(table.name).update(table.patch as Record<string, unknown>).eq("user_id", a.user.id).select("*");
     record(
       `2 A ne modifie pas ${table.name}`,
       denied(updErr, upd?.length ?? 0) ? "OK" : "ÉCHEC",

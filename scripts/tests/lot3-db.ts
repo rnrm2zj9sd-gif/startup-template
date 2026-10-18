@@ -132,13 +132,13 @@ async function main() {
       a.supabase.rpc("validate_mission", { p_mission_id: mission.id, p_ressenti: "bien", p_note: "" }),
     ]);
     const ok = [r1, r2].filter((r) => r.status === "fulfilled" && !r.value.error);
-    const ko = [r1, r2].filter((r) => r.status === "rejected" || (r.status === "fulfilled" && r.value.error));
+    const xps = ok.map((r) => (r.status === "fulfilled" ? (r.value.data as { xp?: number } | null)?.xp : undefined));
     const { data: ledger } = await a.supabase.from("xp_ledger").select("id").eq("mission_id", mission.id);
-    const once = ok.length === 1 && ko.length === 1 && (ledger?.length ?? 0) === 1;
+    const once = ok.length === 2 && xps[0] === xps[1] && (ledger?.length ?? 0) === 1;
     record(
       "6",
       once ? "OK" : "ÉCHEC",
-      `succès=${ok.length} erreurs=${ko.length} ledger=${ledger?.length ?? 0}`,
+      `succès=${ok.length} xp=${xps.join("/")} ledger=${ledger?.length ?? 0}`,
     );
   } catch (err) {
     record("6", "ÉCHEC", err instanceof Error ? err.message : "erreur");

@@ -117,7 +117,10 @@ export function SiteHeader() {
               </Link>
             ))}
             <Link
-              className={cn(buttonVariants({ variant: "default" }), "text-sm")}
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "bg-brand-blue! text-sm text-background! shadow-none hover:bg-brand-blue/90!"
+              )}
               href="#waitlist"
             >
               Rejoindre la liste d’attente

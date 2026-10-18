@@ -3,6 +3,22 @@ import type { DomaineAffiche } from "./config";
 
 export type PlafondXp = "quotidien" | "perso" | null;
 
+/** Forme commune d'une ligne à insérer dans `missions` (moteur ou complément). */
+export type MissionInsert = {
+  user_id: string;
+  date_locale: string;
+  type: "daily" | "weekly" | "main" | "side" | "first";
+  domaine: DomaineAffiche;
+  competence_id: string;
+  titre: string;
+  description: string;
+  duree_min: number;
+  difficulte: string;
+  payload: Record<string, unknown>;
+  xp_prevu: number;
+  statut: "a_faire";
+};
+
 export type MissionRow = {
   id: string;
   user_id: string;
@@ -38,6 +54,8 @@ export type ValidateMissionResult = {
   rangAvant: Rank;
   rangApres: Rank;
   missionId: string;
+  /** Présent quand la mission était déjà validée : aucun XP, journal ni palier n'est réécrit. */
+  deja?: boolean;
 };
 
 export type PowerDetail = {

@@ -4,6 +4,7 @@ import { BorderBeam } from "@/components/magicui/border-beam";
 import { CharacterPedestal } from "@/components/system/character-pedestal";
 import { SystemCharacter } from "@/components/system/system-character";
 import { XPBar } from "@/components/system/xp-bar";
+import { RANG_SEUILS } from "@/lib/progression/config";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/player";
 import { motion, useInView, useReducedMotion } from "motion/react";
@@ -157,14 +158,6 @@ export function SystemBlock({ player, className }: SystemBlockProps) {
 
 /** Libellé du prochain palier de rang (ex. « C au niveau 20 »). */
 function nextRankLabel(level: number): string {
-  const thresholds: Array<[number, string]> = [
-    [10, "D"],
-    [20, "C"],
-    [40, "B"],
-    [60, "A"],
-    [80, "S"],
-    [100, "SS"],
-  ];
-  const next = thresholds.find(([min]) => level < min);
-  return next ? `${next[1]} au niveau ${next[0]}` : "Rang maximal atteint";
+  const next = [...RANG_SEUILS].sort((a, b) => a.niveau - b.niveau).find((s) => level < s.niveau);
+  return next ? `${next.rang} au niveau ${next.niveau}` : "Rang maximal atteint";
 }

@@ -9,6 +9,7 @@ import { jourLocal } from "@/lib/temps";
 import { DOMAINE_MOTEUR_VERS_AFFICHE, type DomaineAffiche } from "./config";
 import { profilDepuisLignes, type ContratPersiste } from "./contrat";
 import { decalerJour } from "./snapshot";
+import type { MissionInsert } from "./types";
 
 export function domaineAfficheDe(competenceId: string, catalog?: ContratPersiste | null): DomaineAffiche {
   const domaine = CATALOGUE[competenceId]?.domaine;
@@ -38,7 +39,7 @@ export function ligneDepuisSeance(input: {
   seance: SeancePrevue;
   type?: "daily" | "weekly";
   catalog?: ContratPersiste | null;
-}) {
+}): MissionInsert {
   const { seance, userId, catalog } = input;
   const niveaux = seance.exercices.map((e) => niveauExercice(seance.competenceId, e.exerciceId, catalog));
   const niveauMoyen = niveaux.length ? niveaux.reduce((a, b) => a + b, 0) / niveaux.length : 2;
@@ -101,6 +102,8 @@ export function planDuJour(input: {
     focus_ids: string[] | null;
     seances_semaine: number | null;
     minutes_max: number | null;
+    mode?: string | null;
+    mode_en_vigueur?: string | null;
   }[];
   catalog: ContratPersiste | null;
   etat: EtatUtilisateur;

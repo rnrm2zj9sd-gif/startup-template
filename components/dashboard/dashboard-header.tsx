@@ -2,6 +2,7 @@
 
 import { useProfile } from "@/lib/profile-store";
 import { Calendar } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface DashboardHeaderProps {
@@ -40,10 +41,13 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
         </p>
       </div>
       {isHome && (
-        <p className="flex items-center gap-2 text-xs tracking-[0.2em] text-muted-foreground">
+        <Link
+          href="/planning"
+          className="flex items-center gap-2 text-xs tracking-[0.2em] text-muted-foreground hover:text-foreground"
+        >
           <Calendar className="size-3.5" aria-hidden />
-          {today ?? "…"}
-        </p>
+          {today ?? "Planning"}
+        </Link>
       )}
     </header>
   );

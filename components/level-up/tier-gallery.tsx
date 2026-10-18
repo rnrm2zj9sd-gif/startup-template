@@ -5,7 +5,7 @@ import { useProfile } from "@/lib/profile-store";
 import { TIERS, getNextTier, getTierIndex, levelsToNextTier, tierLabel, tierProgress } from "@/lib/tiers";
 import { useLevelUp } from "./level-up-provider";
 
-/** Galerie des paliers. Le personnage reste le mannequin System, teinté. */
+/** Galerie des paliers. Chaque carte montre le rendu du palier. */
 export function TierGallery({
   level: levelOverride,
   unlockAll = false,

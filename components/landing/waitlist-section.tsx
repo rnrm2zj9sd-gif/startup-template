@@ -110,8 +110,8 @@ export default function WaitlistSection() {
                   type="submit"
                   disabled={isSubmitting}
                   className={cn(
-                    "group h-11 gap-2 rounded-xl px-5 font-semibold",
-                    "transition-all duration-300 hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:ring-offset-background"
+                    "group h-11 gap-2 rounded-xl bg-brand-blue! px-5 font-semibold text-background! shadow-none",
+                    "transition-all duration-300 hover:bg-brand-blue/90! hover:ring-2 hover:ring-brand-blue hover:ring-offset-2 hover:ring-offset-background"
                   )}
                 >
                   {isSubmitting ? (

@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type Zone = { id: string; nom: string; niveau: number; palier: number };
+type Mode = "guide" | "mixte" | "libre";
 type Active = {
   id: string;
   nom: string;
@@ -18,7 +19,16 @@ type Active = {
   niveau: number;
   palier: number;
   zones: Zone[];
+  mode: Mode;
+  modeEnVigueur: Mode;
+  modeDepuis: string | null;
 };
+
+const MODES: { id: Mode; label: string; texte: string }[] = [
+  { id: "guide", label: "Guidé", texte: "Le Système compose tes missions. Tu valides ou tu reportes." },
+  { id: "mixte", label: "Mixte", texte: "Le Système compose. Tu épingles, tu masques, tu peux remplacer une mission du jour (même zone)." },
+  { id: "libre", label: "Libre", texte: "Le Système ne pose que 2 minutes de plancher. Tu ajoutes tes missions." },
+];
 type CatalogItem = { id: string; nom: string; domaine: string; domaineLabel: string; active: boolean };
 
 export default function CompetencesPage() {
@@ -57,6 +67,23 @@ export default function CompetencesPage() {
       return;
     }
     toast.success("Compétence ajoutée. Effet dès demain.");
+    await Promise.all([reload(), reloadMoteur()]);
+  }
+
+  async function changerMode(id: string, mode: Mode) {
+    setBusy(id);
+    const res = await fetch("/api/me/competences", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ competenceId: id, mode }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) {
+      toast.error(typeof json.error === "string" ? json.error : "Mode impossible.");
+      return;
+    }
+    toast.message("Mode enregistré. Effet dès demain.");
     await Promise.all([reload(), reloadMoteur()]);
   }
 
@@ -141,6 +168,29 @@ export default function CompetencesPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     Zones : {c.zones.map((z) => z.nom).join(", ") || "toutes"}
                   </p>
+                  <fieldset className="mt-4">
+                    <legend className="text-[11px] tracking-[0.3em] text-muted-foreground">MODE</legend>
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                      {MODES.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          disabled={busy === c.id}
+                          onClick={() => void changerMode(c.id, m.id)}
+                          className={cn(
+                            "h-11 rounded-lg border px-2 text-xs",
+                            c.mode === m.id ? "border-primary/60 bg-primary/15 text-foreground" : "border-border text-muted-foreground",
+                          )}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">{MODES.find((m) => m.id === c.mode)?.texte}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {c.mode === c.modeEnVigueur ? "En vigueur aujourd'hui." : "Effet dès demain."}
+                    </p>
+                  </fieldset>
                 </li>
               ))}
             </ul>

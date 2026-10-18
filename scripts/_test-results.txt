@@ -1,0 +1,142 @@
+
+===== lot2 =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+OK	login A et B (anon)	deux sessions distinctes
+OK	1 profiles A lit sa ligne	id=f84bf3cb…
+OK	1 A insère goals	id=66ece6d8-9d1d-43b2-ad1b-4fbf8dc24ae2
+OK	1 A insère missions	id=20dff96b-45bc-47b6-8daa-22a15bad50ae
+OK	1 A insère user_skill_choices	id=b3fdf44d-43a5-40fe-a379-f12ed018a459
+OK	1 A écrit custom_catalog	upsert
+OK	1 B ne lit pas profiles de A	rows=0
+OK	1 B ne modifie pas profiles de A	updated=0
+OK	1 B ne supprime pas profiles de A	deleted=0
+OK	1 ligne A encore là après delete B (profiles)	rows=1
+OK	1 B n'insère pas profiles avec l'id de A	new row violates row-level security policy for table "profiles"
+OK	1 B ne lit pas goals de A	rows=0
+OK	1 B ne modifie pas goals de A	updated=0
+OK	1 B ne supprime pas goals de A	deleted=0
+OK	1 ligne A encore là après delete B (goals)	rows=27
+OK	1 B n'insère pas goals avec l'id de A	new row violates row-level security policy for table "goals"
+OK	1 B ne lit pas missions de A	rows=0
+OK	1 B ne modifie pas missions de A	permission denied for table missions
+OK	1 B ne supprime pas missions de A	deleted=0
+OK	1 ligne A encore là après delete B (missions)	rows=18
+OK	1 B n'insère pas missions avec l'id de A	date invalide : aujourd'hui ou demain
+OK	1 B ne lit pas user_skill_choices de A	rows=0
+OK	1 B ne modifie pas user_skill_choices de A	updated=0
+OK	1 B ne supprime pas user_skill_choices de A	deleted=0
+OK	1 ligne A encore là après delete B (user_skill_choices)	rows=4
+OK	1 B n'insère pas user_skill_choices avec l'id de A	new row violates row-level security policy for table "user_skill_choices"
+OK	1 B ne lit pas custom_catalog de A	rows=0
+OK	1 B ne modifie pas custom_catalog de A	updated=0
+OK	1 B ne supprime pas custom_catalog de A	deleted=0
+OK	1 ligne A encore là après delete B (custom_catalog)	rows=1
+OK	1 B n'insère pas custom_catalog avec l'id de A	new row violates row-level security policy for table "custom_catalog"
+OK	2 A n'insère pas xp_ledger	permission denied for table xp_ledger
+OK	2 A ne modifie pas xp_ledger	permission denied for table xp_ledger
+OK	2 A ne supprime pas xp_ledger	permission denied for table xp_ledger
+OK	2 A n'insère pas mission_validations	permission denied for table mission_validations
+OK	2 A ne modifie pas mission_validations	permission denied for table mission_validations
+OK	2 A ne supprime pas mission_validations	permission denied for table mission_validations
+OK	2 A n'insère pas skill_progress	permission denied for table skill_progress
+OK	2 A ne modifie pas skill_progress	permission denied for table skill_progress
+OK	2 A ne supprime pas skill_progress	permission denied for table skill_progress
+OK	2 A n'insère pas system_log	permission denied for table system_log
+OK	2 A ne modifie pas system_log	permission denied for table system_log
+OK	2 A ne supprime pas system_log	permission denied for table system_log
+OK	2 A n'insère pas user_achievements	permission denied for table user_achievements
+OK	2 A ne modifie pas user_achievements	permission denied for table user_achievements
+OK	2 A ne supprime pas user_achievements	permission denied for table user_achievements
+OK	2 A n'insère pas subscriptions	permission denied for table subscriptions
+OK	2 A ne modifie pas subscriptions	permission denied for table subscriptions
+OK	2 A ne supprime pas subscriptions	permission denied for table subscriptions
+non exécuté	3 UNIQUE mission_validations(mission_id)	index prévu: mission_validations_mission_uidx. L'écriture client est refusée (test 2) : la contrainte n'est pas exercée ici, elle le sera au lot 3 via fonction serveur. Catalogue SQL : supabase/tests/lot2_unique_catalog.sql
+OK	4 A ne peut pas se passer is_admin	permission denied for table profiles
+OK	6 trigger profil A et B + timezone	A tz=Europe/Paris ; B tz=Europe/Paris
+OK	7 sans session /dashboard → /login	HTTP 307 location=/login?next=%2Fdashboard
+OK	7 sans session /onboarding → /login	HTTP 307 location=/login?next=%2Fonboarding
+non exécuté	7 avec session A /dashboard	session A obtenue (user f84bf3cb…) mais le middleware Next lit les cookies SSR, pas un Bearer. À vérifier dans le navigateur : login mot de passe → /dashboard → Déconnexion → /dashboard.
+OK	7 après déconnexion (cette machine, sans cookie)	HTTP 307 location=/login?next=%2Fdashboard
+non exécuté	5 cascade	à coller dans SQL Editor : supabase/tests/lot2_cascade.sql (crée un user temporaire, pas A/B)
+OK	cleanup lignes de test A	goals/missions/skill_choices/catalog marqués lot2-iso
+
+| # | Test | Résultat | Preuve |
+|---|------|----------|--------|
+| 1 | Isolation A/B (RLS) | OK | id=f84bf3cb… |
+| 2 | Tables protégées en lecture seule | OK | permission denied for table xp_ledger |
+| 3 | UNIQUE mission_validations | non exécuté | index prévu: mission_validations_mission_uidx. L'écriture client est refusée (test 2) : la contrainte n'est pas exercée ici, elle le sera au lot 3 via fonction serveur. Catalogue SQL : supabase/tests/lot2_unique_catalog.sql |
+| 4 | A ne peut pas se passer is_admin | OK | permission denied for table profiles |
+| 5 | Cascade suppression user | non exécuté | à coller dans SQL Editor : supabase/tests/lot2_cascade.sql (crée un user temporaire, pas A/B) |
+| 6 | Trigger profil + timezone | OK | A tz=Europe/Paris ; B tz=Europe/Paris |
+| 7 | Sans session → /login | OK | HTTP 307 location=/login?next=%2Fdashboard |
+
+5/7 OK
+EXIT:0
+
+===== lot4 =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+Nettoyage : joueur temporaire supprimé (profil restant : 0).
+
+| # | Test | Résultat | Preuve |
+|---|------|----------|--------|
+| 1 | Joueur neuf redirigé vers /onboarding | OK | GET /dashboard → 307 vers /onboarding |
+| 2 | L'onboarding enregistre genre, compétences, budget | OK | 1 compétence → 400 ; envoi valide → 200 ; base : genre=female, onboarding_done=true, compétences=education-financiere[toutes], musculation[abdos+bras], budget=20 min (catalogue 20), matériel=aucun+halteres |
+| 3 | Onboarding terminé : /onboarding renvoie au dashboard | OK | GET /onboarding → 307 vers /dashboard ; GET /dashboard → 200 |
+| 4 | La première mission se valide et crédite des XP | OK | mission first de 2 min ; valider → 200, +6 XP ; xp_ledger=6 ; progression xpTotal=6, niv 1 ; 2e envoi onboarding → même mission (true), missions first=1 |
+| 5 | Recharger /dashboard ne duplique pas les missions (route) | OK | 3 appels generer → création true / false / false, mêmes ids (3 missions daily) ; base : 3 daily ce jour, daily_runs=1 |
+| 6 | Une mission du jour se valide (route de l'écran) | OK | valider → 200 (+5 XP, ressenti trop_facile) ; 2e validation → 409 ; statut=terminee ; journal : 4 lignes, mission_validee présente=true |
+| 7 | « Reporter à demain » pose payload.reportee | OK | reporter → 200 ; base : payload.reportee=true, date 2026-10-16 → 2026-10-17 ; absente des missions du jour=true ; reporter une mission validée → 409 ; discipline=32 |
+| 8 | A ne voit jamais les missions de B | OK | B voit sa mission (1) ; A la lit : 0 ligne ; missions d'autrui visibles : A 0 (sur 17), B 0 (sur 7) ; dans le Daily de A : false ; dans le journal de A : false ; A valide → 403, reporte → 403, modifie → 0 ligne ; B lit une mission de A : 0, la valide → 403 ; mission de B intacte |
+| 9 | Le client ne peut plus modifier une mission | OK | durée → refusé (42501) ; difficulté → refusé (42501) ; XP → refusé (42501) ; statut → refusé (42501) ; date et payload → refusé (42501) ; missions inchangées en base=true ; reporter_mission sans session → refusé ; re-reporter une mission déjà à demain → seule une mission d'aujourd'hui se reporte |
+| 10 | Insertion de 999 minutes (ou 1) refusée | OK | 999 min → durée invalide : 2 à 60 minutes ; 1 min → durée invalide : 2 à 60 minutes |
+| 11 | Difficulté inconnue refusée | OK | difficulté « legendaire » → difficulté invalide |
+| 12 | Statut « terminee » et type « side » refusés à l'insertion | OK | statut terminee → statut invalide : une mission naît à faire ; type side → type de mission invalide |
+| 13 | 13e mission du jour refusée | OK | 1 déjà + 11 = 12/12 le 2026-10-17 ; 13e → limite atteinte : 12 missions par jour |
+| 14 | user_id d'un autre joueur refusé (RLS) | OK | user_id d'un autre → exercice inconnu (RLS missions_insert_own) |
+| 15 | L'onboarding et la génération normale fonctionnent toujours | OK | onboarding → 200, mission first créée ; generer → 200, 3 missions daily créées (trigger actif) |
+| 16 | Plafond 400 XP/jour tenu avec des missions gonflées | OK | 5 missions de 60 min « difficile » validées → +96 / +96 / +96 / +96 / +5 XP ; total du jour en base : 400 (plafond 400) |
+| 17 | Fuseau POSIX, inconnu refusés ; Europe/Paris accepté | OK | inscription tz=Europe/Paris ; UTC-9:40 → fuseau invalide ; inconnu → fuseau invalide ; Europe/Paris → OK ; paramètres (pseudo) → OK |
+| 18 | Deux changements de fuseau à moins de 7 jours : le second est refusé | OK | 1er (Berlin) → OK ; 2e (New_York) → fuseau déjà changé récemment ; tz=Europe/Berlin |
+| 19 | Mission datée d'il y a 5 jours ou dans 5 jours refusée | OK | il y a 5 j → date invalide : aujourd'hui ou demain ; dans 5 j → date invalide : aujourd'hui ou demain ; valider trop lointaine → 400 date invalide : mission trop lointaine |
+| 20 | Attaque des 800 XP : le total reste à 400 par jour local | OK | POSIX → fuseau invalide ; Kiritimati → fuseau déjà changé récemment ; tz=Europe/Berlin ; extra → +0 (plafond quotidien) / +0 (plafond quotidien) / +0 (plafond quotidien) / +0 (plafond quotidien) ; XP/jour local : 2026-10-16=400 |
+
+20/20 OK
+EXIT:0
+
+===== lot5 =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+Nettoyage : joueurs temporaires supprimés (profils restants : 0).
+
+| # | Test | Résultat | Preuve |
+|---|------|----------|--------|
+| 1 | Sans session, chaque nouvel écran redirige vers /login | OK | /domaines → 307 /login ; /competences → 307 /login ; /dashboard/progression → 307 /login ; /journal → 307 /login |
+| 2 | La somme des XP des 6 domaines égale l'XP totale du registre | OK | GET A xpTotal=75 somme domaines=75 registre=75 ; clés=finance,mind,health,fitness,discipline,life |
+| 3 | A et B voient chacun leurs propres chiffres, jamais ceux de l'autre | OK | A xpTotal=75 finance=40 health=0 ; B xpTotal=80 health=80 finance=0 |
+| 4 | Ajouter puis retirer une compétence fonctionne ; la 6e est refusée ; retirer la dernière est refusé | OK | 1re → 200 ; retirer la seule → 409 il te faut au moins une compétence ; +4 → 200/200/200/200 ; 6e → 409 limite atteinte : 5 compétences actives ; actives à 5=5 ; retrait → 200 ; reste education-financiere,endurance,mobilite,musculation |
+| 5 | Une compétence retirée puis réactivée retrouve son niveau et son palier | OK | avant niv 3/2 ; retrait → 200 ; retour → 200 ; après niv 3/2 ; skill_progress=3/2 |
+| 6 | Le Power affiché égale celui de progression_snapshot | OK | GET /api/me/progression.power=40 ; RPC power=40 |
+| 7 | Le journal pagine sans doublon ni trou | OK | pages 20+20+5 (attendu 45) ; doublons=0 ; trou=false ; next3=null |
+| 8 | Après ajout/retrait, la liste API = user_skill_choices ; Paramètres pointe vers /competences | OK | ajout 200 API=store (true) ; retrait 200 API=store (true) ; Paramètres 200 lien=true ancienBloc=false |
+
+8/8 OK
+EXIT:0
+
+===== lot6b =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+Nettoyage : joueurs temporaires supprimés (profils restants : 0).
+
+| # | Test | Résultat | Preuve |
+|---|------|----------|--------|
+| 1 | Le mode se change et ne s'applique qu'à partir de demain | OK | PATCH 200  ; mode=mixte vigueur=guide depuis=2026-10-17 (demain 2026-10-17) |
+| 2 | UPDATE de mode_depuis puis RPC : le client ne saute pas le délai | OK | mode_depuis permission denied for table user_skill_choices ; mode_en_vigueur permission denied for table user_skill_choices ; après RPC vigueur=guide depuis=2026-10-17 |
+| 3 | DELETE+INSERT d'une compétence : le nouveau mode attend demain | OK | delete ok ; insert ok ; mode=libre vigueur=guide depuis=2026-10-17 |
+| 4 | Changement de mode à 00h30 Paris, effectif le jour local suivant | OK | 00h30 Paris → 2026-10-16 ; current_date+1=2026-10-16 ; jour_local+1=2026-10-17 ; PATCH depuis=2026-10-17 ; trigger jour_local=true |
+| 5 | Un exercice masqué n'est jamais proposé en 30 générations ; un épinglé apparaît | OK | masqué vu=false ; épinglé vu=true (30 générations) |
+| 6 | Remplacer : même zone seulement ; 4e du jour refusée | OK | même zone 200 ; hors zone 400 exercice invalide : hors zone ; 4e 409 limite atteinte : 3 remplacements par jour |
+| 7 | Remplacer : mission d'un autre joueur 403 ; déjà faite 409 | OK | autrui 403 cette mission ne t'appartient pas ; faite 409 mission déjà validée |
+| 8 | Libre : ajouter fonctionne ; prévue seulement pour demain ; plafond 400 | OK | aujourd'hui 200 prevue=false ; demain 200 prevue=true ; xp validé=10 plafond400=true |
+| 9 | Libre : durée hors plage, perso d'autrui, 3e fois du même exercice refusés | OK | hors plage 400 ; perso autrui 403 ; 2e 200 ; 3e 409 limite atteinte : 2 fois le même exercice par jour |
+| 10 | A et B ne voient jamais les préférences de l'autre ; la 51e est refusée | OK | A 200 B 200 ; A voit B=0 ; 51e limite atteinte : 50 préférences |
+
+10/10 OK
+EXIT:0

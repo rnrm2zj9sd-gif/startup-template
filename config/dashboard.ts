@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
+  CalendarDays,
   Hexagon,
   LayoutDashboard,
   Library,
@@ -24,6 +25,7 @@ export const dashboardNav: NavItem[] = [
 ];
 
 export const dashboardNavExtra: NavItem[] = [
+  { label: "Planning", href: "/planning", icon: CalendarDays },
   { label: "Mes exercices", href: "/catalogue", icon: Library },
   { label: "Paramètres", href: "/dashboard/parametres", icon: Settings },
 ];

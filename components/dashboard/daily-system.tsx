@@ -3,24 +3,33 @@
 import { Button } from "@/components/ui/button";
 import { RESSENTI_LABELS } from "@/lib/moteur/app";
 import type { Ressenti } from "@/lib/moteur";
+import { DOMAINE_AFFICHE, DOMAINE_LABELS, type DomaineAffiche } from "@/lib/progression/config";
 import { texteJournal } from "@/lib/progression/journal";
-import type { JournalLigne, MissionRow, ProgressionSnapshot } from "@/lib/progression/types";
+import type { JournalLigne, MissionRow } from "@/lib/progression/types";
 import { useMissionsJour } from "@/lib/progression/use-missions";
 import { useProgression } from "@/lib/progression/use-progression";
 import { useProfile } from "@/lib/profile-store";
-import { formatXP, getXPProgress } from "@/lib/system";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { SystemPanel } from "@/components/dashboard/system-panel";
+import { Brain, Check, Dumbbell, Heart, Home, ListChecks, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const RESSENTIS: Ressenti[] = ["trop_facile", "bien", "trop_dur", "pas_fait"];
 
+const ICONE_DOMAINE = {
+  finance: Wallet,
+  mind: Brain,
+  health: Heart,
+  fitness: Dumbbell,
+  discipline: ListChecks,
+  life: Home,
+} as const;
+
 /** Daily System : progression en haut, missions du jour, System Log en bas. */
 export function DailySystem() {
-  const { data: snap, loading: snapLoading, reload: reloadSnap } = useProgression();
+  const { reload: reloadSnap } = useProgression();
   const { missions, loading, valider, reporter } = useMissionsJour();
   const { reloadProgression } = useProfile();
   const [journal, setJournal] = useState<JournalLigne[] | null>(null);
@@ -37,7 +46,8 @@ export function DailySystem() {
   async function onValider(mission: MissionRow, ressenti: Ressenti) {
     try {
       const r = await valider(mission.id, ressenti);
-      if (r.plafondMessage) toast.message(r.plafondMessage);
+      if (r.deja) toast.message("Déjà validée.");
+      else if (r.plafondMessage) toast.message(r.plafondMessage);
       else toast.success(r.xp > 0 ? `+${r.xp} XP` : "Mission enregistrée.");
       await Promise.all([reloadSnap(), reloadJournal(), reloadProgression()]);
     } catch (e) {
@@ -57,35 +67,24 @@ export function DailySystem() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <Statistiques snap={snap} loading={snapLoading} />
+      <SystemPanel />
 
-      <section aria-labelledby="missions-title" className="rounded-2xl border border-border bg-card">
-        <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <h2 id="missions-title" className="text-[11px] tracking-[0.3em] text-muted-foreground">
-            MISSIONS DU JOUR
-          </h2>
-          {missions.length > 0 && (
-            <p className="font-mono text-xs tabular-nums text-muted-foreground">
-              {missions.filter((m) => m.statut === "terminee").length} / {missions.length}
-            </p>
-          )}
-        </header>
+      <section aria-labelledby="missions-title" className="flex flex-col gap-4">
+        <MissionsEntete missions={missions} loading={loading} />
         {loading ? (
-          <p className="px-5 py-6 text-sm text-muted-foreground">Chargement des missions…</p>
+          <p className="rounded-2xl border border-border bg-card px-5 py-8 text-sm text-muted-foreground">
+            Chargement des missions…
+          </p>
         ) : missions.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-muted-foreground">
-            Aucune mission aujourd&apos;hui. Ajuste tes compétences dans{" "}
+          <p className="rounded-2xl border border-border bg-card px-5 py-8 text-sm leading-relaxed text-muted-foreground">
+            Rien de prévu aujourd&apos;hui. Repos, ou ajuste tes compétences dans{" "}
             <Link href="/competences" className="text-foreground underline-offset-2 hover:underline">
               Compétences
             </Link>
             .
           </p>
         ) : (
-          <ul>
-            {missions.map((m) => (
-              <MissionItem key={m.id} mission={m} onValider={onValider} onReporter={onReporter} />
-            ))}
-          </ul>
+          <MissionsParDomaine missions={missions} onValider={onValider} onReporter={onReporter} />
         )}
       </section>
 
@@ -94,63 +93,89 @@ export function DailySystem() {
   );
 }
 
-function Statistiques({ snap, loading }: { snap: ProgressionSnapshot | null; loading: boolean }) {
-  const reduce = useReducedMotion() ?? false;
-  const progress = snap ? getXPProgress(snap.xpDansNiveau, snap.xpPourSuivant) : 0;
-  const reste = snap ? Math.max(0, snap.xpPourSuivant - snap.xpDansNiveau) : 0;
+function MissionsEntete({ missions, loading }: { missions: MissionRow[]; loading: boolean }) {
+  const faites = missions.filter((m) => m.statut === "terminee").length;
+  const total = missions.length;
+  const ratio = total > 0 ? Math.round((faites / total) * 100) : 0;
 
   return (
-    <section aria-label="Progression" className="rounded-2xl border border-border bg-panel p-5 md:p-6">
-      <div className="flex items-end justify-between gap-4">
-        <p className="flex items-baseline gap-2">
-          <span className="text-[10px] tracking-[0.28em] text-muted-foreground">NIV.</span>
-          <span className="font-mono text-4xl font-light leading-none tabular-nums">
-            {snap ? String(snap.niveau).padStart(2, "0") : "—"}
-          </span>
-        </p>
-        <p className="text-right">
-          <span className="block text-[10px] tracking-[0.28em] text-muted-foreground">RANG</span>
-          <span className="font-mono text-2xl text-brand-gold">{snap?.rang ?? "—"}</span>
+    <header className="flex items-end justify-between gap-4 px-1">
+      <div>
+        <h2 id="missions-title" className="text-[11px] tracking-[0.3em] text-muted-foreground">
+          AUJOURD&apos;HUI
+        </h2>
+        <p className="mt-1 text-sm text-foreground">
+          {loading ? "Chargement…" : total === 0 ? "Journée libre" : `${faites} sur ${total}`}
         </p>
       </div>
-
-      <div
-        role="progressbar"
-        aria-label="XP vers le prochain niveau"
-        aria-valuemin={0}
-        aria-valuemax={snap?.xpPourSuivant ?? 0}
-        aria-valuenow={snap?.xpDansNiveau ?? 0}
-        className="mt-4 h-2 overflow-hidden rounded-full bg-white/5"
-      >
-        <motion.div
-          className="h-full rounded-full bg-primary"
-          initial={false}
-          animate={{ width: `${progress}%` }}
-          transition={reduce ? { duration: 0 } : { duration: 1.4, ease: [0.21, 0.47, 0.32, 0.98] }}
-        />
-      </div>
-      <p className="mt-2 flex justify-between font-mono text-[11px] tabular-nums text-muted-foreground">
-        <span>
-          {snap ? `${formatXP(snap.xpDansNiveau)} / ${formatXP(snap.xpPourSuivant)} XP` : loading ? "Chargement…" : "—"}
-        </span>
-        <span>{snap ? `${formatXP(reste)} XP avant niv. ${snap.niveau + 1}` : ""}</span>
-      </p>
-
-      <dl className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-border bg-card px-4 py-3">
-          <dt className="text-[10px] tracking-[0.28em] text-muted-foreground">CHAÎNE</dt>
-          <dd className="mt-1 font-mono text-xl tabular-nums">
-            {snap?.chaineJours ?? "—"} <span className="text-xs text-muted-foreground">{snap?.chaineJours === 1 ? "jour" : "jours"}</span>
-          </dd>
+      {total > 0 && (
+        <div className="w-28">
+          <div
+            role="progressbar"
+            aria-label="Missions faites aujourd'hui"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={faites}
+            className="h-1.5 overflow-hidden rounded-full bg-white/5"
+          >
+            <div className="h-full rounded-full bg-primary transition-[width] duration-700 motion-reduce:transition-none" style={{ width: `${ratio}%` }} />
+          </div>
         </div>
-        <div className="rounded-xl border border-border bg-card px-4 py-3">
-          <dt className="text-[10px] tracking-[0.28em] text-muted-foreground">DISCIPLINE</dt>
-          <dd className="mt-1 font-mono text-xl tabular-nums">
-            {snap?.discipline ?? "—"} <span className="text-xs text-muted-foreground">/ 100</span>
-          </dd>
-        </div>
-      </dl>
-    </section>
+      )}
+    </header>
+  );
+}
+
+function MissionsParDomaine({
+  missions,
+  onValider,
+  onReporter,
+}: {
+  missions: MissionRow[];
+  onValider: (m: MissionRow, r: Ressenti) => Promise<void>;
+  onReporter: (m: MissionRow) => Promise<void>;
+}) {
+  const premiere = missions.filter((m) => m.type === "first");
+  const reste = missions.filter((m) => m.type !== "first");
+  const groupes = DOMAINE_AFFICHE.map((domaine) => ({
+    domaine,
+    missions: reste.filter((m) => m.domaine === domaine),
+  })).filter((g) => g.missions.length > 0);
+  const ailleurs = reste.filter((m) => !DOMAINE_AFFICHE.includes(m.domaine as DomaineAffiche));
+
+  return (
+    <div className="flex flex-col gap-6">
+      {premiere.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {premiere.map((m) => (
+            <MissionItem key={m.id} mission={m} onValider={onValider} onReporter={onReporter} />
+          ))}
+        </ul>
+      )}
+      {groupes.map((g) => {
+        const Icone = ICONE_DOMAINE[g.domaine];
+        return (
+          <section key={g.domaine} aria-label={DOMAINE_LABELS[g.domaine]} className="flex flex-col gap-3">
+            <h3 className="flex items-center gap-2 px-1 text-[11px] tracking-[0.28em] text-muted-foreground">
+              <Icone className="size-3.5" aria-hidden />
+              {DOMAINE_LABELS[g.domaine].toUpperCase()}
+            </h3>
+            <ul className="flex flex-col gap-3">
+              {g.missions.map((m) => (
+                <MissionItem key={m.id} mission={m} onValider={onValider} onReporter={onReporter} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+      {ailleurs.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {ailleurs.map((m) => (
+            <MissionItem key={m.id} mission={m} onValider={onValider} onReporter={onReporter} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -175,66 +200,96 @@ function MissionItem({
   }
 
   return (
-    <li className="border-b border-border px-5 py-4 last:border-b-0" data-mission-id={mission.id}>
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className={cn(
-            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
-            done ? "border-primary bg-primary text-primary-foreground" : "border-border",
-          )}
-        >
-          {done && <Check className="size-3" strokeWidth={3} />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className={cn("text-sm font-medium", done && "text-muted-foreground line-through")}>{mission.titre}</p>
-          {mission.description && <p className="mt-1 text-xs text-muted-foreground">{mission.description}</p>}
-          <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-xs tabular-nums text-muted-foreground">
-            <span>{mission.duree_min} min</span>
-            <span className={done ? "" : "text-brand-gold"}>≈ +{mission.xp_prevu} XP</span>
-            {mission.type === "first" && <span className="tracking-[0.2em] text-primary">PREMIÈRE VICTOIRE</span>}
-            {reportee && <span className="tracking-[0.2em]">REPORTÉE</span>}
-          </p>
-        </div>
-      </div>
-
-      {!done && (
-        <div className="mt-4 flex flex-col gap-3 pl-8">
-          <div role="radiogroup" aria-label="Ressenti" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-            {RESSENTIS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                role="radio"
-                aria-checked={ressenti === r}
-                onClick={() => setRessenti(r)}
-                className={cn(
-                  "rounded-lg border px-2 py-2 text-xs transition-colors",
-                  ressenti === r ? "border-primary/60 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:border-white/15",
-                )}
-              >
-                {RESSENTI_LABELS[r]}
-              </button>
-            ))}
+    <li data-mission-id={mission.id}>
+      <article
+        className={cn(
+          "rounded-2xl border border-border bg-card p-5",
+          done && "bg-card/60",
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <span
+            aria-hidden
+            className={cn(
+              "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border",
+              done ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white/5",
+            )}
+          >
+            {done && <Check className="size-3.5" strokeWidth={3} />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className={cn("text-base font-medium leading-snug", done && "text-muted-foreground")}>{mission.titre}</h3>
+            {mission.description && (
+              <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{mission.description}</p>
+            )}
+            <p className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-white/5 px-2.5 py-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+                {mission.duree_min} min
+              </span>
+              <span className={cn("rounded-full bg-white/5 px-2.5 py-1 font-mono text-[11px] tabular-nums", done ? "text-muted-foreground" : "text-brand-gold")}>
+                +{mission.xp_prevu} XP
+              </span>
+              {mission.type === "first" && (
+                <span className="rounded-full bg-primary/15 px-2.5 py-1 text-[11px] tracking-[0.14em] text-primary">
+                  PREMIÈRE
+                </span>
+              )}
+              {reportee && (
+                <span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] tracking-[0.14em] text-muted-foreground">
+                  REPORTÉE
+                </span>
+              )}
+              {done && (
+                <span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] tracking-[0.14em] text-muted-foreground">
+                  FAITE
+                </span>
+              )}
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" disabled={envoi} onClick={() => run(() => onValider(mission, ressenti))} className="h-10 flex-1 sm:flex-none">
-              Valider
+        </div>
+
+        {!done && (
+          <div className="mt-5">
+            <div role="radiogroup" aria-label="Ressenti" className="flex flex-wrap gap-2">
+              {RESSENTIS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  role="radio"
+                  aria-checked={ressenti === r}
+                  onClick={() => setRessenti(r)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                    ressenti === r
+                      ? "border-primary/50 bg-primary/15 text-foreground"
+                      : "border-transparent bg-white/5 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {RESSENTI_LABELS[r]}
+                </button>
+              ))}
+            </div>
+            <Button
+              type="button"
+              disabled={envoi}
+              onClick={() => run(() => onValider(mission, ressenti))}
+              className="mt-4 h-12 w-full rounded-full text-sm shadow-none"
+            >
+              {envoi ? "Validation…" : "Valider"}
             </Button>
             {mission.type === "daily" && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 disabled={envoi}
                 onClick={() => run(() => onReporter(mission))}
-                className="h-10 flex-1 sm:flex-none"
+                className="mt-2 w-full py-2 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
               >
                 Reporter à demain
-              </Button>
+              </button>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </article>
     </li>
   );
 }

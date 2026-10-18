@@ -194,29 +194,27 @@ function testsPurs() {
 
   const seuils: [number, string][] = [
     [1, "E"],
-    [4, "E"],
-    [5, "D"],
-    [9, "D"],
-    [10, "C"],
-    [19, "C"],
-    [20, "B"],
-    [34, "B"],
-    [35, "A"],
-    [49, "A"],
-    [50, "S"],
-    [99, "S"],
-    [100, "SS"],
+    [9, "E"],
+    [10, "D"],
+    [24, "D"],
+    [25, "C"],
+    [44, "C"],
+    [45, "B"],
+    [69, "B"],
+    [70, "A"],
+    [99, "A"],
+    [100, "S"],
   ];
   const seuilOk = seuils.every(([n, rang]) => rangDepuisNiveau(n) === rang);
-  const courbe = xpPourNiveau(1) === Math.round(120 * 1 ** 0.6);
+  const courbe = xpPourNiveau(1) === 40 && xpPourNiveau(10) === 247;
   record(
     8,
     "niveau et rang corrects à des seuils connus",
     seuilOk && courbe ? "OK" : "ÉCHEC",
-    `E 1-4, D 5-9, C 10-19, B 20-34, A 35-49, S 50-99, SS 100+ ; XP(1)=${xpPourNiveau(1)}`,
+    `E <10, D 10, C 25, B 45, A 70, S 100 ; XP(1)=${xpPourNiveau(1)} XP(10)=${xpPourNiveau(10)}`,
   );
 
-  const ordre = ["E", "D", "C", "B", "A", "S", "SS"];
+  const ordre = ["E", "D", "C", "B", "A", "S"];
   let xp = 0;
   let plancher = 0;
   let monotone = true;
@@ -255,7 +253,7 @@ async function testsBase() {
     const proof = `variables absentes : ${missing.join(", ")}`;
     for (const [n, test] of [
       [1, "validation normale"],
-      [2, "double validation refusée"],
+      [2, "double validation idempotente"],
       [3, "mission d'un autre joueur refusée"],
       [12, "écriture directe dans xp_ledger refusée depuis le client"],
     ] as const) {
@@ -275,7 +273,7 @@ async function testsBase() {
     const proof = err instanceof Error ? err.message : "auth";
     for (const [n, test] of [
       [1, "validation normale"],
-      [2, "double validation refusée"],
+      [2, "double validation idempotente"],
       [3, "mission d'un autre joueur refusée"],
       [12, "écriture directe dans xp_ledger refusée depuis le client"],
     ] as const) {
@@ -310,7 +308,7 @@ async function testsBase() {
     const proof = `migration 0004 absente (${rpcMissing.message})`;
     for (const [n, test] of [
       [1, "validation normale"],
-      [2, "double validation refusée"],
+      [2, "double validation idempotente"],
       [3, "mission d'un autre joueur refusée"],
     ] as const) {
       record(n, test, "non exécuté", proof);
@@ -358,16 +356,20 @@ async function testsBase() {
       a.supabase.rpc("validate_mission", { p_mission_id: mission.id, p_ressenti: "bien", p_note: "" }),
       a.supabase.rpc("validate_mission", { p_mission_id: mission.id, p_ressenti: "bien", p_note: "" }),
     ]);
-    const ok = [r1, r2].filter((r) => r.status === "fulfilled" && !r.value.error).length;
+    const succes = [r1, r2].filter((r) => r.status === "fulfilled" && !r.value.error);
+    const xps = succes.map((r) => (r.status === "fulfilled" ? (r.value.data as { xp?: number; deja?: boolean } | null) : null));
     const { data: led } = await a.supabase.from("xp_ledger").select("id").eq("mission_id", mission.id);
+    const { data: vals } = await a.supabase.from("mission_validations").select("id").eq("mission_id", mission.id);
+    const memeXp = xps.length === 2 && xps[0]?.xp === xps[1]?.xp && typeof xps[0]?.xp === "number";
+    const unRejeu = xps.filter((x) => x?.deja === true).length === 1;
     record(
       2,
-      "double validation refusée",
-      ok === 1 && (led?.length ?? 0) === 1 ? "OK" : "ÉCHEC",
-      `succès=${ok} ledger=${led?.length ?? 0}`,
+      "double validation idempotente",
+      succes.length === 2 && memeXp && unRejeu && (led?.length ?? 0) === 1 && (vals?.length ?? 0) === 1 ? "OK" : "ÉCHEC",
+      `succès=${succes.length} xp=${xps.map((x) => x?.xp ?? "?").join("/")} deja=${xps.map((x) => x?.deja).join("/")} ledger=${led?.length ?? 0} validations=${vals?.length ?? 0}`,
     );
   } catch (err) {
-    record(2, "double validation refusée", "ÉCHEC", err instanceof Error ? err.message : "erreur");
+    record(2, "double validation idempotente", "ÉCHEC", err instanceof Error ? err.message : "erreur");
   }
 
   try {

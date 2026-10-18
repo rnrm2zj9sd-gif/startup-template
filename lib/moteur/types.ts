@@ -83,6 +83,8 @@ export type Domaine =
 
 // ------------------------- Utilisateur -------------------------
 
+export type ModeCompetence = "guide" | "mixte" | "libre";
+
 /** Ce que l'utilisateur choisit dans l'app pour UNE compétence. */
 export interface ChoixCompetence {
   competenceId: string;
@@ -91,6 +93,8 @@ export interface ChoixCompetence {
   seancesParSemaine: number; // ex. 5
   minutesMax: number; // ex. 15 → « pas beaucoup »
   niveauDepart?: 1 | 2 | 3 | 4 | 5;
+  /** Mode en vigueur pour la génération (pas le mode souhaité). */
+  mode?: ModeCompetence;
 }
 
 export interface Profil {

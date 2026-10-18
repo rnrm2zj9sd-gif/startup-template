@@ -1,7 +1,7 @@
 import { CharacterAura } from "@/components/system/character-aura";
 import "@/components/level-up/level-up.css";
 import { cn } from "@/lib/utils";
-import { getTier, getTierIndex, type Tier } from "@/lib/tiers";
+import { getTier, getTierIndex, tierImage } from "@/lib/tiers";
 import type { Gender } from "@/types/player";
 import Image from "next/image";
 import type { CSSProperties } from "react";
@@ -22,13 +22,9 @@ const LABELS: Record<Gender, string> = {
   female: "Personnage féminin",
 };
 
-function wash(tier: Tier, index: number) {
-  const strength = 0.5 + index * 0.06;
-  return `linear-gradient(180deg, rgba(${tier.rgb}, ${Math.min(0.82, strength)}) 8%, rgba(${tier.rgb}, 0.22) 100%)`;
-}
-
 /**
- * Mannequin System teinté par le palier : même PNG, matière + aura.
+ * Personnage du palier. Avec un niveau, le rendu est déjà teinté
+ * (bronze, argent, or…). Sans niveau, mannequin neutre.
  */
 export function SystemCharacter({
   gender,
@@ -40,9 +36,9 @@ export function SystemCharacter({
   style,
 }: SystemCharacterProps) {
   const width = Math.round(size * 0.75);
-  const src = `/character/${gender}.png`;
   const tier = level != null ? getTier(level) : null;
   const index = level != null ? getTierIndex(level) : -1;
+  const src = tier ? tierImage(tier, gender) : `/character/${gender}.png`;
   const mask: CSSProperties | undefined = tier
     ? {
         WebkitMaskImage: `url(${src})`,
@@ -74,35 +70,15 @@ export function SystemCharacter({
         style={{
           width,
           height: size,
-          filter: tier ? `drop-shadow(0 0 ${14 + index * 3}px rgba(${tier.rgb}, 0.55))` : undefined,
+          filter: tier ? `drop-shadow(0 0 ${8 + index * 2}px rgba(${tier.rgb}, 0.35))` : undefined,
         }}
         draggable={false}
       />
 
       {tier && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-20"
-          style={{
-            background: wash(tier, index),
-            mixBlendMode: "color",
-            ...mask,
-          }}
-        />
-      )}
-
-      {tier && (
         <span aria-hidden className="pointer-events-none absolute inset-0 z-30 overflow-hidden" style={mask}>
           <span className="char-shimmer absolute inset-y-0 -left-1/2 w-1/2" />
         </span>
-      )}
-
-      {tier && index >= 5 && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[5%] z-30 h-[9%] w-[40%] -translate-x-1/2 rounded-full border motion-safe:animate-halo"
-          style={{ borderColor: `rgba(${tier.rgb}, 0.55)`, boxShadow: `0 0 18px rgba(${tier.rgb}, 0.35)` }}
-        />
       )}
     </span>
   );

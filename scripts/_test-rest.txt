@@ -1,0 +1,430 @@
+
+===== lot2sql =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+
+| Test | Résultat | Preuve |
+|---|---|---|
+| 3 index UNIQUE mission_validations(mission_id) | OK | index mission_validations_mission_uidx |
+| 3 doublon mission_validations refusé | OK | doublon refusé (23505, mission_validations_mission_uidx) |
+| 3 nettoyage | OK | missions restantes=0, validations restantes=0 |
+| 5 cascade (suppression de l'utilisateur temporaire) | OK | 7 tables vérifiées, toutes à 0 |
+| 5 nettoyage utilisateur temporaire | OK | utilisateurs temporaires restants=0 |
+EXIT:0
+
+===== lot3 =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+
+| # | Test | Résultat | Preuve |
+|---|---|---|---|
+| 1 | validation normale | OK | joueur neuf chaîne=0 ; 10×1,3×1,25×1,00=16 ; xp=16 statut=terminee |
+| 2 | double validation refusée | OK | succès=1 ledger=1 |
+| 3 | mission d'un autre joueur refusée | OK | cette mission ne t'appartient pas |
+| 4 | plafond 400 XP/jour | OK | reste 30, crédité 30 |
+| 5 | plafond perso 60 % | OK | crédité 150 sur un jour à 250 |
+| 6 | chaîne qui se fissure (1 jour manqué) | OK | chaîne 4 puis jour sauté → 5 (conservée) |
+| 7 | chaîne divisée par 2 (2 jours ou plus) | OK | chaîne 4 puis 2 jours sautés → 3 |
+| 8 | niveau et rang corrects à des seuils connus | OK | E <10, D 10, C 25, B 45, A 70, S 100 ; XP(1)=40 XP(10)=247 |
+| 9 | rang qui ne descend pas | OK | XP seulement en hausse, rang monotone |
+| 10 | Power avec objectif valide et non valide | OK | 2 missions liées → 0 ; 3 missions → +25 (power 25) |
+| 11 | changement de jour selon le fuseau (Europe/Paris) | OK | 23:30 → 2026-10-11 ; 00:30 → 2026-10-12 |
+| 12 | écriture directe dans xp_ledger refusée depuis le client | OK | permission denied for table xp_ledger |
+EXIT:0
+
+===== lot6a =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+Erreur : getaddrinfo ENOTFOUND aws-1-eu-west-2.pooler.supabase.com
+
+| # | Test | Résultat | Preuve |
+|---|------|----------|--------|
+| 1 | Sans session, /catalogue redirige vers /login | non exécuté | arrêt avant ce test |
+| 2 | Créer compétence, zone et exercice perso, puis le moteur le propose | non exécuté | arrêt avant ce test |
+| 3 | 31e élément, durée 1 ou 31, nom de 61 caractères : refusés | non exécuté | arrêt avant ce test |
+| 4 | A ne voit ni n'utilise l'exercice perso de B | non exécuté | arrêt avant ce test |
+| 5 | Durée 999 ou exercice inventé : mission refusée | non exécuté | arrêt avant ce test |
+| 6 | Mission perso insérée avec perso:false est enregistrée perso:true | non exécuté | arrêt avant ce test |
+| 7 | 3 missions perso + 1 officielle : le perso reste à 60 % du crédité | non exécuté | arrêt avant ce test |
+| 8 | Un nom <script> s'affiche comme texte | non exécuté | arrêt avant ce test |
+| 9 | Supprimer un exercice perso garde la mission passée | non exécuté | arrêt avant ce test |
+
+0/9 OK
+EXIT:1
+
+===== unitaires =====
+npm warn exec The following package was not found and will be installed: tsx@4.23.15
+TAP version 13
+# D (niv 10) : 25=54j  50=27j  120=12j
+# C (niv 25) : 25=259j  50=130j  120=54j
+# B (niv 45) : 25=682j  50=341j  120=143j
+# A (niv 70) : 25=1401j  50=701j  120=292j
+# S (niv 100) : 25=2496j  50=1248j  120=520j
+# Subtest: 1. plusieurs niveaux d'un coup
+    # Subtest: donne le niveau final après un gros gain
+    ok 1 - donne le niveau final après un gros gain
+      ---
+      duration_ms: 1.594208
+      type: 'test'
+      ...
+    # Subtest: reste au niveau 1 sous le premier palier
+    ok 2 - reste au niveau 1 sous le premier palier
+      ---
+      duration_ms: 0.226042
+      type: 'test'
+      ...
+    1..2
+ok 1 - 1. plusieurs niveaux d'un coup
+  ---
+  duration_ms: 3.6925
+  type: 'suite'
+  ...
+# Subtest: 2. seuils de rang aux limites
+    # Subtest: 9 → E, 10 → D
+    ok 1 - 9 → E, 10 → D
+      ---
+      duration_ms: 0.406167
+      type: 'test'
+      ...
+    # Subtest: 24 → D, 25 → C
+    ok 2 - 24 → D, 25 → C
+      ---
+      duration_ms: 0.105792
+      type: 'test'
+      ...
+    # Subtest: 44 → C, 45 → B
+    ok 3 - 44 → C, 45 → B
+      ---
+      duration_ms: 0.082
+      type: 'test'
+      ...
+    # Subtest: 69 → B, 70 → A
+    ok 4 - 69 → B, 70 → A
+      ---
+      duration_ms: 0.078291
+      type: 'test'
+      ...
+    # Subtest: 99 → A, 100 → S
+    ok 5 - 99 → A, 100 → S
+      ---
+      duration_ms: 0.219833
+      type: 'test'
+      ...
+    1..5
+ok 2 - 2. seuils de rang aux limites
+  ---
+  duration_ms: 1.940875
+  type: 'suite'
+  ...
+# Subtest: 3. plafonds 400 XP/jour et 60 % perso
+    # Subtest: coupe au plafond quotidien
+    ok 1 - coupe au plafond quotidien
+      ---
+      duration_ms: 0.586416
+      type: 'test'
+      ...
+    # Subtest: refuse au-delà de 400
+    ok 2 - refuse au-delà de 400
+      ---
+      duration_ms: 0.290708
+      type: 'test'
+      ...
+    # Subtest: limite les missions perso à 60 % du jour
+    ok 3 - limite les missions perso à 60 % du jour
+      ---
+      duration_ms: 0.472
+      type: 'test'
+      ...
+    1..3
+ok 3 - 3. plafonds 400 XP/jour et 60 % perso
+  ---
+  duration_ms: 1.794917
+  type: 'suite'
+  ...
+# Subtest: 4. Power
+    # Subtest: un profil équilibré dépasse un mono-domaine à XP égale
+    ok 1 - un profil équilibré dépasse un mono-domaine à XP égale
+      ---
+      duration_ms: 1.3165
+      type: 'test'
+      ...
+    # Subtest: un objectif terminé avec moins de 3 missions ne rapporte rien
+    ok 2 - un objectif terminé avec moins de 3 missions ne rapporte rien
+      ---
+      duration_ms: 0.188833
+      type: 'test'
+      ...
+    1..2
+ok 4 - 4. Power
+  ---
+  duration_ms: 1.641708
+  type: 'suite'
+  ...
+# Subtest: 5. simulation jours / rang
+    # Subtest: affiche 25 / 50 / 120 XP/jour et respecte les cibles à 50
+    ok 1 - affiche 25 / 50 / 120 XP/jour et respecte les cibles à 50
+      ---
+      duration_ms: 2.042792
+      type: 'test'
+      ...
+    1..1
+ok 5 - 5. simulation jours / rang
+  ---
+  duration_ms: 3.045792
+  type: 'suite'
+  ...
+# Subtest: 6-7. chaîne qui se fissure
+    # Subtest: 1 jour manqué conserve la chaîne
+    ok 1 - 1 jour manqué conserve la chaîne
+      ---
+      duration_ms: 1.248167
+      type: 'test'
+      ...
+    # Subtest: 2 jours ou plus divisent la chaîne par 2
+    ok 2 - 2 jours ou plus divisent la chaîne par 2
+      ---
+      duration_ms: 0.244292
+      type: 'test'
+      ...
+    1..2
+ok 6 - 6-7. chaîne qui se fissure
+  ---
+  duration_ms: 2.018416
+  type: 'suite'
+  ...
+# Subtest: 8-9. rang
+    # Subtest: le rang ne descend pas quand l'XP ne fait qu'augmenter
+    ok 1 - le rang ne descend pas quand l'XP ne fait qu'augmenter
+      ---
+      duration_ms: 0.49025
+      type: 'test'
+      ...
+    1..1
+ok 7 - 8-9. rang
+  ---
+  duration_ms: 0.574042
+  type: 'suite'
+  ...
+# Subtest: difficulté 1.0 / 1.3 / 1.6
+    # Subtest: applique les trois multiplicateurs sur une mission prévue
+    ok 1 - applique les trois multiplicateurs sur une mission prévue
+      ---
+      duration_ms: 0.267042
+      type: 'test'
+      ...
+    1..1
+ok 8 - difficulté 1.0 / 1.3 / 1.6
+  ---
+  duration_ms: 0.341833
+  type: 'suite'
+  ...
+# Subtest: 11. jour local Europe/Paris
+    # Subtest: bascule à minuit Paris
+    ok 1 - bascule à minuit Paris
+      ---
+      duration_ms: 50.633875
+      type: 'test'
+      ...
+    1..1
+ok 9 - 11. jour local Europe/Paris
+  ---
+  duration_ms: 50.765625
+  type: 'suite'
+  ...
+# Subtest: plancher de 3 missions/jour (complement)
+    # Subtest: ne complète pas si on a déjà assez de missions
+    ok 1 - ne complète pas si on a déjà assez de missions
+      ---
+      duration_ms: 1.60375
+      type: 'test'
+      ...
+    # Subtest: complète jusqu'au plancher, jamais plus
+    ok 2 - complète jusqu'au plancher, jamais plus
+      ---
+      duration_ms: 0.6135
+      type: 'test'
+      ...
+    # Subtest: ne tire jamais une compétence exclue
+    ok 3 - ne tire jamais une compétence exclue
+      ---
+      duration_ms: 6.074834
+      type: 'test'
+      ...
+    # Subtest: est déterministe : même utilisateur + même jour = même tirage
+    ok 4 - est déterministe : même utilisateur + même jour = même tirage
+      ---
+      duration_ms: 1.019875
+      type: 'test'
+      ...
+    # Subtest: change de tirage d'un jour à l'autre
+    ok 5 - change de tirage d'un jour à l'autre
+      ---
+      duration_ms: 0.523917
+      type: 'test'
+      ...
+    # Subtest: chaque mission de complément est valide pour le trigger SQL (durée 2–60, exercice niveau 1, non prévue)
+    ok 6 - chaque mission de complément est valide pour le trigger SQL (durée 2–60, exercice niveau 1, non prévue)
+      ---
+      duration_ms: 0.206416
+      type: 'test'
+      ...
+    1..6
+ok 10 - plancher de 3 missions/jour (complement)
+  ---
+  duration_ms: 11.483167
+  type: 'suite'
+  ...
+# Subtest: missions du jour par domaine
+    # Subtest: propose au moins une mission de départ dans chaque domaine affiché
+    ok 1 - propose au moins une mission de départ dans chaque domaine affiché
+      ---
+      duration_ms: 0.610708
+      type: 'test'
+      ...
+    # Subtest: fixe la cible : 3, 4, puis 5 selon le nombre de domaines
+    ok 2 - fixe la cible : 3, 4, puis 5 selon le nombre de domaines
+      ---
+      duration_ms: 0.14025
+      type: 'test'
+      ...
+    # Subtest: ne tire que dans les domaines choisis, jusqu'à la cible
+    ok 3 - ne tire que dans les domaines choisis, jusqu'à la cible
+      ---
+      duration_ms: 0.9615
+      type: 'test'
+      ...
+    # Subtest: ne complète pas au-delà de la cible et ignore les exercices déjà posés
+    ok 4 - ne complète pas au-delà de la cible et ignore les exercices déjà posés
+      ---
+      duration_ms: 0.429958
+      type: 'test'
+      ...
+    # Subtest: est déterministe, et change d'un jour à l'autre
+    ok 5 - est déterministe, et change d'un jour à l'autre
+      ---
+      duration_ms: 0.582334
+      type: 'test'
+      ...
+    1..5
+ok 11 - missions du jour par domaine
+  ---
+  duration_ms: 2.943333
+  type: 'suite'
+  ...
+# Subtest: classe
+    # Subtest: Initié avant 10 missions, Balanced si aucun domaine > 30 %
+    ok 1 - Initié avant 10 missions, Balanced si aucun domaine > 30 %
+      ---
+      duration_ms: 0.312292
+      type: 'test'
+      ...
+    1..1
+ok 12 - classe
+  ---
+  duration_ms: 0.396125
+  type: 'suite'
+  ...
+# Subtest: 23 h 30 à Paris le 11/10 donne le 11/10 (21 h 30 UTC)
+ok 13 - 23 h 30 à Paris le 11/10 donne le 11/10 (21 h 30 UTC)
+  ---
+  duration_ms: 280.354417
+  type: 'test'
+  ...
+# Subtest: 00 h 30 à Paris le 12/10 donne le 12/10
+ok 14 - 00 h 30 à Paris le 12/10 donne le 12/10
+  ---
+  duration_ms: 7.914
+  type: 'test'
+  ...
+# Subtest: changement d'heure du 25/10/2026 : le jour local reste le 25
+ok 15 - changement d'heure du 25/10/2026 : le jour local reste le 25
+  ---
+  duration_ms: 3.758584
+  type: 'test'
+  ...
+# Subtest: debutJourLocal / finJourLocal à Paris hors DST
+ok 16 - debutJourLocal / finJourLocal à Paris hors DST
+  ---
+  duration_ms: 2.168042
+  type: 'test'
+  ...
+# Subtest: le 25/10/2026 à Paris dure 25 heures (recul d'une heure)
+ok 17 - le 25/10/2026 à Paris dure 25 heures (recul d'une heure)
+  ---
+  duration_ms: 2.127333
+  type: 'test'
+  ...
+# Subtest: TS et SQL : courbe XP et rangs identiques
+ok 18 - TS et SQL : courbe XP et rangs identiques
+  ---
+  duration_ms: 453.911167
+  type: 'test'
+  ...
+# niveaux 1–200 alignés ; xp(1)=40 xp(10)=247 rangs E/D/…/S
+# Subtest: la fusion ne modifie pas CATALOGUE
+ok 19 - la fusion ne modifie pas CATALOGUE
+  ---
+  duration_ms: 8.37575
+  type: 'test'
+  ...
+# Subtest: Ma routine abdos apparaît dès que la zone Abdos est choisie
+ok 20 - Ma routine abdos apparaît dès que la zone Abdos est choisie
+  ---
+  duration_ms: 111.011792
+  type: 'test'
+  ...
+# Subtest: la corde à sauter n'apparaît jamais
+ok 21 - la corde à sauter n'apparaît jamais
+  ---
+  duration_ms: 53.957208
+  type: 'test'
+  ...
+# Subtest: Avant-bras et Guitare apparaissent dans le planning
+ok 22 - Avant-bras et Guitare apparaissent dans le planning
+  ---
+  duration_ms: 38.369
+  type: 'test'
+  ...
+# Subtest: un perso 60 min difficile est plafonné à 30 min × 1,3 avant 5 validations
+ok 23 - un perso 60 min difficile est plafonné à 30 min × 1,3 avant 5 validations
+  ---
+  duration_ms: 1.7475
+  type: 'test'
+  ...
+# Subtest: validerExercicePerso refuse valeur 0, nom vide et zone inexistante
+ok 24 - validerExercicePerso refuse valeur 0, nom vide et zone inexistante
+  ---
+  duration_ms: 0.581458
+  type: 'test'
+  ...
+# Subtest: aucun jour ne dépasse budgetMinutesJour
+ok 25 - aucun jour ne dépasse budgetMinutesJour
+  ---
+  duration_ms: 33.700292
+  type: 'test'
+  ...
+# Subtest: l'initiation pose 4 questions principales plus 1 par secondaire
+ok 26 - l'initiation pose 4 questions principales plus 1 par secondaire
+  ---
+  duration_ms: 31.445208
+  type: 'test'
+  ...
+# Subtest: onboarding : 2 à 3 compétences du catalogue, zones et budget vérifiés
+ok 27 - onboarding : 2 à 3 compétences du catalogue, zones et budget vérifiés
+  ---
+  duration_ms: 231.499542
+  type: 'test'
+  ...
+# Subtest: première victoire : mission plancher de 2 minutes, XP positive
+ok 28 - première victoire : mission plancher de 2 minutes, XP positive
+  ---
+  duration_ms: 5.402833
+  type: 'test'
+  ...
+1..28
+# tests 46
+# suites 12
+# pass 46
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1811.507875
+EXIT:0

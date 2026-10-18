@@ -1,15 +1,20 @@
 import type { Rank } from "@/types/player";
 import { RANG_SEUILS, XP_COURBE_EXPOSANT, XP_COURBE_FACTEUR } from "./config";
 
+/** XP totale pour atteindre `niveau` (identique à xp_seuil_niveau). */
+export function xpSeuilNiveau(niveau: number): number {
+  if (niveau <= 1) return 0;
+  return Math.round(XP_COURBE_FACTEUR * (niveau - 1) ** XP_COURBE_EXPOSANT);
+}
+
+/** XP pour passer du niveau n au niveau n+1 (identique à xp_pour_niveau). */
 export function xpPourNiveau(n: number): number {
   if (n < 1) return 0;
-  return Math.round(XP_COURBE_FACTEUR * n ** XP_COURBE_EXPOSANT);
+  return xpSeuilNiveau(n + 1) - xpSeuilNiveau(n);
 }
 
 export function xpCumulePourAtteindre(niveau: number): number {
-  let total = 0;
-  for (let n = 1; n < niveau; n++) total += xpPourNiveau(n);
-  return total;
+  return xpSeuilNiveau(niveau);
 }
 
 export function niveauDepuisXp(xpTotal: number): number {

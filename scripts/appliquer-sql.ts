@@ -1,5 +1,5 @@
 /**
- * Applique dans l'ordre les fichiers supabase/apply/NN_*.sql sur DATABASE_URL (.env.local),
+ * Applique dans l'ordre les fichiers supabase/schema/NN_*.sql sur DATABASE_URL (.env.local),
  * affiche OK ou l'erreur pour chacun, puis le tableau de vérification du dernier fichier.
  * Usage : npx tsx scripts/appliquer-sql.ts
  */
@@ -8,7 +8,7 @@ import path from "node:path";
 import { Client, type QueryResult } from "pg";
 
 const ROOT = process.cwd();
-const APPLY_DIR = path.join(ROOT, "supabase/apply");
+const SCHEMA_DIR = path.join(ROOT, "supabase/schema");
 
 function lireEnvLocal(): void {
   const fichier = path.join(ROOT, ".env.local");
@@ -28,7 +28,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const fichiers = readdirSync(APPLY_DIR)
+  const fichiers = readdirSync(SCHEMA_DIR)
     .filter((f) => /^\d{2}_.+\.sql$/.test(f))
     .sort();
 
@@ -39,11 +39,12 @@ async function main(): Promise<void> {
   let verification: QueryResult | null = null;
   try {
     for (const f of fichiers) {
-      const sql = readFileSync(path.join(APPLY_DIR, f), "utf8");
+      const sql = readFileSync(path.join(SCHEMA_DIR, f), "utf8");
       try {
         const res = (await client.query(sql)) as QueryResult | QueryResult[];
         console.log(`OK      ${f}`);
-        if (f === fichiers.at(-1)) verification = Array.isArray(res) ? res.at(-1)! : res;
+        const dernier = Array.isArray(res) ? res.at(-1)! : res;
+        if (dernier.rows?.some((r) => "present" in r)) verification = dernier;
       } catch (e) {
         echecs++;
         const err = e as { message?: string; code?: string };

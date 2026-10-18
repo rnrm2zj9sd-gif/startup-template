@@ -77,7 +77,7 @@ export function tierProgress(level: number): number {
 
 /** Image du personnage pour un palier. Fichiers : /public/character/tiers/<genre>-<palier>.webp */
 export function tierImage(tier: Tier, gender: TierGender): string {
-  return `/character/tiers/${gender}-${tier.key}.webp`;
+  return `/character/tiers/${gender}-${tier.key}.webp?v=10`;
 }
 
 export function tierLabel(tier: Tier): string {

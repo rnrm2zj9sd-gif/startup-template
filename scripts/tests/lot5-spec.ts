@@ -286,7 +286,7 @@ async function main() {
 
     async function idsStore() {
       const { data } = await a.client.from("user_skill_choices").select("competence_id").eq("user_id", idA).order("competence_id");
-      return (data ?? []).map((r) => r.competence_id).sort().join(",");
+      return (data ?? []).map((r: { competence_id: string }) => r.competence_id).sort().join(",");
     }
     async function idsApi() {
       const g = await http(a, "GET", "/api/me/competences");

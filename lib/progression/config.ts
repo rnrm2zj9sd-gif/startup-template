@@ -1,8 +1,8 @@
 import type { Rank } from "@/types/player";
 
-/** Courbe : XP pour passer du niveau n au niveau n+1. */
-export const XP_COURBE_FACTEUR = 120;
-export const XP_COURBE_EXPOSANT = 0.6;
+/** Courbe : XP totale pour atteindre N = round(K × (N-1)^p). */
+export const XP_COURBE_FACTEUR = 40;
+export const XP_COURBE_EXPOSANT = 1.6;
 
 export const XP_JOUR_MAX = 400;
 export const XP_PERSO_PART_MAX = 0.6;
@@ -56,12 +56,11 @@ export const DOMAINE_MOTEUR_VERS_AFFICHE: Record<string, DomaineAffiche> = {
 
 /** Premier niveau auquel le rang est atteint. */
 export const RANG_SEUILS: { rang: Rank; niveau: number }[] = [
-  { rang: "SS", niveau: 100 },
-  { rang: "S", niveau: 50 },
-  { rang: "A", niveau: 35 },
-  { rang: "B", niveau: 20 },
-  { rang: "C", niveau: 10 },
-  { rang: "D", niveau: 5 },
+  { rang: "S", niveau: 100 },
+  { rang: "A", niveau: 70 },
+  { rang: "B", niveau: 45 },
+  { rang: "C", niveau: 25 },
+  { rang: "D", niveau: 10 },
 ];
 
 export const NOMS_CLASSES: Record<DomaineAffiche | "balanced" | "initie", string> = {

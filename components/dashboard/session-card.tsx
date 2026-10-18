@@ -79,7 +79,8 @@ export function SessionCard({
                   void valider(mission.id, r)
                     .then((res) => {
                       void reload();
-                      if (res.plafondMessage) toast.message(res.plafondMessage);
+                      if (res.deja) toast.message("Déjà validée.");
+                      else if (res.plafondMessage) toast.message(res.plafondMessage);
                       else toast.success(`+${res.xp} XP`);
                     })
                     .catch((err: unknown) => {

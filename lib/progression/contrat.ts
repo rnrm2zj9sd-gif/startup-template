@@ -1,4 +1,8 @@
-import type { CataloguePerso, ChoixCompetence, Materiel, Profil } from "@/lib/moteur";
+import type { CataloguePerso, ChoixCompetence, Materiel, ModeCompetence, Profil } from "@/lib/moteur";
+
+export function modeCompetence(value: string | null | undefined): ModeCompetence {
+  return value === "mixte" || value === "libre" ? value : "guide";
+}
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ContratPersiste = {
@@ -40,17 +44,25 @@ export async function persistContrat(
   }
 
   for (const choix of profil.choix) {
-    const { error } = await supabase.from("user_skill_choices").upsert(
-      {
-        user_id: userId,
-        competence_id: choix.competenceId,
-        focus_ids: choix.focusIds,
-        seances_semaine: choix.seancesParSemaine,
-        minutes_max: choix.minutesMax,
-        mode: "guide",
-      },
-      { onConflict: "user_id,competence_id" },
-    );
+    const deja = (existing ?? []).some((row) => row.competence_id === choix.competenceId);
+    const { error } = deja
+      ? await supabase
+          .from("user_skill_choices")
+          .update({
+            focus_ids: choix.focusIds,
+            seances_semaine: choix.seancesParSemaine,
+            minutes_max: choix.minutesMax,
+          })
+          .eq("user_id", userId)
+          .eq("competence_id", choix.competenceId)
+      : await supabase.from("user_skill_choices").insert({
+          user_id: userId,
+          competence_id: choix.competenceId,
+          focus_ids: choix.focusIds,
+          seances_semaine: choix.seancesParSemaine,
+          minutes_max: choix.minutesMax,
+          mode: "guide",
+        });
     if (error) throw error;
   }
 }
@@ -62,6 +74,8 @@ export function profilDepuisLignes(input: {
     focus_ids: string[] | null;
     seances_semaine: number | null;
     minutes_max: number | null;
+    mode?: string | null;
+    mode_en_vigueur?: string | null;
   }[];
   catalog: ContratPersiste | null;
 }): Profil {
@@ -74,6 +88,7 @@ export function profilDepuisLignes(input: {
         focusIds: c.focus_ids ?? [],
         seancesParSemaine: c.seances_semaine ?? 3,
         minutesMax: c.minutes_max ?? 30,
+        mode: modeCompetence(c.mode_en_vigueur ?? c.mode),
       }),
     ),
     materiel: data?.materiel?.length ? data.materiel : ["aucun"],

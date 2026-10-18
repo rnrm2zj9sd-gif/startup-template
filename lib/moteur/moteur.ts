@@ -336,6 +336,87 @@ export function genererSeance(
   };
 }
 
+/** Mode libre : seulement la mission plancher de 2 minutes. */
+export function genererPlancher(
+  profil: Profil,
+  etat: EtatUtilisateur,
+  catalogue: Record<string, Competence>,
+  choix: ChoixCompetence,
+  date: string,
+): SeancePrevue {
+  catalogue = catalogueDuProfil(profil, catalogue);
+  const competence = catalogue[choix.competenceId];
+  if (!competence) throw new Error(`Compétence inconnue : ${choix.competenceId}`);
+  const focusId = choix.focusIds[0] ?? competence.focus[0]?.id;
+  const pool = competence.exercices.filter((e) => !focusId || e.focusId === focusId);
+  const ex = pool.find((e) => e.versionPlancher) ?? pool[0] ?? competence.exercices[0];
+  const focusNom = competence.focus.find((f) => f.id === (ex?.focusId ?? focusId))?.nom ?? competence.nom;
+  const exercices: ExercicePrescrit[] = ex
+    ? [
+        {
+          exerciceId: ex.id,
+          nom: ex.nom,
+          focus: focusNom,
+          prescription: "2 min",
+          consigne: ex.versionPlancher ?? `2 minutes de « ${ex.nom} » pour garder la chaîne.`,
+          minutes: 2,
+          ressource: ex.ressource,
+          perso: ex.perso,
+        },
+      ]
+    : [];
+  return {
+    date,
+    competenceId: competence.id,
+    competence: competence.nom,
+    focusIds: ex ? [ex.focusId] : focusId ? [focusId] : [],
+    focusNoms: [focusNom],
+    exercices,
+    minutesTotal: 2,
+    xpEstime: calculerXP(2, ex?.niveau ?? 1, etat.chaineJours),
+    missionPlancher: ex?.versionPlancher ?? `2 minutes de « ${ex?.nom ?? competence.nom} » pour garder la chaîne.`,
+  };
+}
+
+/** Mixte : au moins un exercice épinglé par semaine pour chaque zone travaillée. */
+function assurerEpinglesSemaine(plan: JourPlan[], profil: Profil, catalogue: Record<string, Competence>): void {
+  for (const choix of profil.choix) {
+    if ((choix.mode ?? "guide") !== "mixte") continue;
+    const competence = catalogue[choix.competenceId];
+    if (!competence) continue;
+    const pins = competence.exercices.filter((e) => e.epingle);
+    if (!pins.length) continue;
+    const seances = plan.flatMap((j) => j.seances.filter((s) => s.competenceId === choix.competenceId));
+    const focusTravailles = new Set(seances.flatMap((s) => s.focusIds));
+    for (const focusId of focusTravailles) {
+      const pinsZone = pins.filter((e) => e.focusId === focusId);
+      if (!pinsZone.length) continue;
+      const deja = seances.some((s) => s.exercices.some((x) => pinsZone.some((p) => p.id === x.exerciceId)));
+      if (deja) continue;
+      const cible = seances.find((s) => s.focusIds.includes(focusId));
+      if (!cible) continue;
+      const pin = pinsZone[0];
+      const focusNom = competence.focus.find((f) => f.id === focusId)?.nom ?? focusId;
+      const prescrit: ExercicePrescrit = {
+        exerciceId: pin.id,
+        nom: pin.nom,
+        focus: focusNom,
+        prescription: "épinglé",
+        consigne: pin.consigne,
+        minutes: Math.max(2, cible.exercices[0]?.minutes ?? 5),
+        ressource: pin.ressource,
+        perso: pin.perso,
+      };
+      const idx = cible.exercices.findIndex((x) => {
+        const src = competence.exercices.find((e) => e.id === x.exerciceId);
+        return src?.focusId === focusId;
+      });
+      if (idx >= 0) cible.exercices[idx] = prescrit;
+      else cible.exercices.unshift(prescrit);
+    }
+  }
+}
+
 // ------------------------ Plan de la semaine ------------------------
 
 export function planifierSemaine(
@@ -358,6 +439,19 @@ export function planifierSemaine(
     let reste = profil.budgetMinutesJour;
 
     duJour.forEach((choix, i) => {
+      if ((choix.mode ?? "guide") === "libre") {
+        const s = genererPlancher(profil, etat, catalogue, choix, date);
+        seances.push(s);
+        reste -= s.minutesTotal;
+        histoVirtuel.push({
+          date,
+          competenceId: s.competenceId,
+          focusIds: s.focusIds,
+          exerciceIds: s.exercices.map((e) => e.exerciceId),
+          ressenti: "bien",
+        });
+        return;
+      }
       // Partage équitable du budget du jour entre les compétences restantes.
       const part = Math.floor(reste / (duJour.length - i));
       const minutes = Math.min(choix.minutesMax, part);
@@ -378,6 +472,7 @@ export function planifierSemaine(
 
     plan.push({ date, jour: JOURS[j], seances, minutesTotal: seances.reduce((a, s) => a + s.minutesTotal, 0) });
   }
+  assurerEpinglesSemaine(plan, profil, catalogue);
   return plan;
 }
 

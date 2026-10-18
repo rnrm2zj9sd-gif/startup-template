@@ -28,14 +28,29 @@ const DIFFICULTES: { id: DifficultePerso; label: string }[] = [
 
 type Kind = "competence" | "zone" | "exercice";
 
+export type OfficielExo = {
+  id: string;
+  nom: string;
+  competenceId: string;
+  competenceNom: string;
+  focusId: string;
+  focusNom: string;
+};
+
 export function CatalogueScreen({
   perso,
   officielles,
   zonesOfficielles,
+  officiel = [],
+  mixteIds = [],
+  prefs = [],
 }: {
   perso: CataloguePerso;
   officielles: Cible[];
   zonesOfficielles: ZoneCible[];
+  officiel?: OfficielExo[];
+  mixteIds?: string[];
+  prefs?: { exerciceId: string; kind: "epingle" | "masque" }[];
 }) {
   const router = useRouter();
   const [ouvert, setOuvert] = useState(false);
@@ -51,6 +66,9 @@ export function CatalogueScreen({
   const [difficulte, setDifficulte] = useState<DifficultePerso>("moyen");
   const [materiel, setMateriel] = useState<Materiel>("aucun");
   const [lien, setLien] = useState("");
+  const [recherche, setRecherche] = useState("");
+  const mixte = useMemo(() => new Set(mixteIds), [mixteIds]);
+  const prefParExo = useMemo(() => new Map(prefs.map((p) => [p.exerciceId, p.kind])), [prefs]);
 
   const competences = useMemo<Cible[]>(
     () => [...officielles, ...perso.competences.map((c) => ({ id: c.id, nom: c.nom, perso: true }))],
@@ -141,6 +159,28 @@ export function CatalogueScreen({
     toast.success("Supprimé. Tes missions passées restent.");
     router.refresh();
   }
+
+  async function preferer(exerciceId: string, kind: "epingle" | "masque" | null) {
+    setBusy(true);
+    const res = await fetch("/api/me/prefs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ exerciceId, kind }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      toast.error(typeof json.error === "string" ? json.error : "Préférence impossible.");
+      return;
+    }
+    router.refresh();
+  }
+
+  const q = recherche.trim().toLowerCase();
+  const catalogueFiltre = officiel.filter((e) => {
+    if (!q) return true;
+    return [e.nom, e.competenceNom, e.focusNom].some((t) => t.toLowerCase().includes(q));
+  });
 
   const vide = perso.competences.length + perso.focus.length + perso.exercices.length === 0;
 

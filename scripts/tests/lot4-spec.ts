@@ -198,10 +198,10 @@ async function main() {
       const val6 = (await db.query(`select ressenti from public.mission_validations where mission_id = $1`, [aValider.id])).rows;
       const journal = await http(s, "GET", "/api/me/journal");
       const lignes = (journal.json.lignes ?? []) as { type: string; payload: { missionId?: string } }[];
-      const vuJournal = lignes.some((l) => l.type === "mission_validee" && l.payload?.missionId === aValider.id);
-      noter(6, v6.status === 200 && Number(v6.json.xp) > 0 && v6bis.status >= 400 && m6?.statut === "terminee" && val6.length === 1 && vuJournal ? "OK" : "ÉCHEC",
-        `valider → ${v6.status} (+${v6.json.xp} XP, ressenti ${val6[0]?.ressenti}) ; 2e validation → ${v6bis.status} ; statut=${m6?.statut} ; ` +
-        `journal : ${lignes.length} lignes, mission_validee présente=${vuJournal}`);
+      const journalMission = lignes.filter((l) => l.type === "mission_validee" && l.payload?.missionId === aValider.id).length;
+      noter(6, v6.status === 200 && Number(v6.json.xp) > 0 && v6bis.status === 200 && v6bis.json.deja === true && v6bis.json.xp === v6.json.xp && m6?.statut === "terminee" && val6.length === 1 && val6[0]?.ressenti === "trop_facile" && journalMission === 1 ? "OK" : "ÉCHEC",
+        `valider → ${v6.status} (+${v6.json.xp} XP, ressenti ${val6[0]?.ressenti}) ; 2e validation → ${v6bis.status} deja=${v6bis.json.deja} xp=${v6bis.json.xp} ; statut=${m6?.statut} ; ` +
+        `journal : ${lignes.length} lignes, mission_validee=${journalMission}`);
 
       const rep = await http(s, "POST", `/api/missions/${aReporter.id}/reporter`);
       const repTerminee = await http(s, "POST", `/api/missions/${aValider.id}/reporter`);

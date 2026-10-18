@@ -14,7 +14,9 @@ import { xpCumulePourAtteindre, niveauDepuisXp, progressionVersNiveauSuivant, ra
 import { chaineDepuisJours } from "./chaine";
 import { calculerPower, niveauxDomainesDepuisXp, objectifValide } from "./power";
 import { appliquerPlafondQuotidien, calculerXpMission } from "./xp";
-import { ajouterJours, enregistrerResultat, etatInitial, type SeancePrevue } from "@/lib/moteur";
+import { missionsComplementaires, MISSIONS_JOUR_MIN } from "./complement";
+import { catalogueDepart, cibleMissionsDuJour, domainesChoisis, tirerMissionsDepart } from "./missions-depart";
+import { ajouterJours, CATALOGUE, enregistrerResultat, etatInitial, type SeancePrevue } from "@/lib/moteur";
 import { jourLocal } from "@/lib/temps";
 
 describe("1. plusieurs niveaux d'un coup", () => {
@@ -36,12 +38,11 @@ describe("1. plusieurs niveaux d'un coup", () => {
 
 describe("2. seuils de rang aux limites", () => {
   const limites: [number, string, number, string][] = [
-    [4, "E", 5, "D"],
-    [9, "D", 10, "C"],
-    [19, "C", 20, "B"],
-    [34, "B", 35, "A"],
-    [49, "A", 50, "S"],
-    [99, "S", 100, "SS"],
+    [9, "E", 10, "D"],
+    [24, "D", 25, "C"],
+    [44, "C", 45, "B"],
+    [69, "B", 70, "A"],
+    [99, "A", 100, "S"],
   ];
 
   for (const [sous, rangSous, sur, rangSur] of limites) {
@@ -130,19 +131,19 @@ describe("5. simulation jours / rang", () => {
   }
 
   const cibles = [
-    { rang: "D", niveau: 5 },
-    { rang: "C", niveau: 10 },
-    { rang: "B", niveau: 20 },
-    { rang: "A", niveau: 35 },
-    { rang: "S", niveau: 50 },
+    { rang: "D", niveau: 10 },
+    { rang: "C", niveau: 25 },
+    { rang: "B", niveau: 45 },
+    { rang: "A", niveau: 70 },
+    { rang: "S", niveau: 100 },
   ] as const;
 
   const bandes50: Record<string, [number, number]> = {
-    D: [10, 21],
-    C: [40, 80],
-    B: [140, 240],
-    A: [330, 460],
-    S: [550, 900],
+    D: [20, 40],
+    C: [110, 150],
+    B: [320, 370],
+    A: [680, 730],
+    S: [1200, 1300],
   };
 
   it("affiche 25 / 50 / 120 XP/jour et respecte les cibles à 50", () => {
@@ -200,7 +201,7 @@ describe("6-7. chaîne qui se fissure", () => {
 
 describe("8-9. rang", () => {
   it("le rang ne descend pas quand l'XP ne fait qu'augmenter", () => {
-    const ordre = ["E", "D", "C", "B", "A", "S", "SS"];
+    const ordre = ["E", "D", "C", "B", "A", "S"];
     let xp = 0;
     let plancher = 0;
     for (const gain of [0, 40, 180, 900, 4000, 25000]) {
@@ -233,6 +234,158 @@ describe("11. jour local Europe/Paris", () => {
   it("bascule à minuit Paris", () => {
     assert.equal(jourLocal(new Date("2026-10-11T21:30:00Z"), "Europe/Paris"), "2026-10-11");
     assert.equal(jourLocal(new Date("2026-10-11T22:30:00Z"), "Europe/Paris"), "2026-10-12");
+  });
+});
+
+describe("plancher de 3 missions/jour (complement)", () => {
+  it("ne complète pas si on a déjà assez de missions", () => {
+    const r = missionsComplementaires({
+      userId: "u1",
+      date: "2026-10-16",
+      totalMissionsDuJour: 3,
+      competencesExclues: [],
+      chaineJours: 0,
+    });
+    assert.deepEqual(r, []);
+  });
+
+  it("complète jusqu'au plancher, jamais plus", () => {
+    const r = missionsComplementaires({
+      userId: "u1",
+      date: "2026-10-16",
+      totalMissionsDuJour: 1,
+      competencesExclues: [],
+      chaineJours: 0,
+    });
+    assert.equal(r.length, MISSIONS_JOUR_MIN - 1);
+  });
+
+  it("ne tire jamais une compétence exclue", () => {
+    const exclues = Object.keys(CATALOGUE).slice(0, Object.keys(CATALOGUE).length - 1);
+    const r = missionsComplementaires({
+      userId: "u1",
+      date: "2026-10-16",
+      totalMissionsDuJour: 0,
+      competencesExclues: exclues,
+      chaineJours: 0,
+    });
+    for (const m of r) assert.ok(!exclues.includes(m.competence_id));
+  });
+
+  it("est déterministe : même utilisateur + même jour = même tirage", () => {
+    const args = { userId: "u42", date: "2026-10-16", totalMissionsDuJour: 0, competencesExclues: [], chaineJours: 0 };
+    const a = missionsComplementaires(args).map((m) => m.competence_id);
+    const b = missionsComplementaires(args).map((m) => m.competence_id);
+    assert.deepEqual(a, b);
+  });
+
+  it("change de tirage d'un jour à l'autre", () => {
+    const a = missionsComplementaires({ userId: "u42", date: "2026-10-16", totalMissionsDuJour: 0, competencesExclues: [], chaineJours: 0 }).map((m) => m.competence_id);
+    const b = missionsComplementaires({ userId: "u42", date: "2026-10-17", totalMissionsDuJour: 0, competencesExclues: [], chaineJours: 0 }).map((m) => m.competence_id);
+    assert.notDeepEqual(a, b);
+  });
+
+  it("chaque mission de complément est valide pour le trigger SQL (durée 2–60, exercice niveau 1, non prévue)", () => {
+    const r = missionsComplementaires({
+      userId: "u1",
+      date: "2026-10-16",
+      totalMissionsDuJour: 0,
+      competencesExclues: [],
+      chaineJours: 0,
+    });
+    for (const m of r) {
+      assert.equal(m.type, "daily");
+      assert.ok(m.duree_min >= 2 && m.duree_min <= 60);
+      assert.equal(m.payload.prevue, false);
+      assert.equal(m.payload.source, "complement");
+      assert.ok(typeof m.payload.exerciceId === "string" && m.payload.exerciceId.length > 0);
+    }
+  });
+});
+
+describe("missions du jour par domaine", () => {
+  it("propose au moins une mission de départ dans chaque domaine affiché", () => {
+    const cat = catalogueDepart();
+    for (const domaine of DOMAINE_AFFICHE) {
+      assert.ok(cat.filter((m) => m.domaine === domaine).length >= 3, domaine);
+    }
+    const ids = cat.map((m) => m.exerciceId);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  it("fixe la cible : 3, 4, puis 5 selon le nombre de domaines", () => {
+    assert.equal(cibleMissionsDuJour(0), 0);
+    assert.equal(cibleMissionsDuJour(1), 3);
+    assert.equal(cibleMissionsDuJour(2), 4);
+    assert.equal(cibleMissionsDuJour(3), 5);
+    assert.equal(cibleMissionsDuJour(6), 5);
+  });
+
+  it("ne tire que dans les domaines choisis, jusqu'à la cible", () => {
+    const domaines = domainesChoisis(["musculation", "education-financiere"]);
+    assert.deepEqual(domaines, ["finance", "fitness"]);
+    const r = tirerMissionsDepart({
+      userId: "u1",
+      date: "2026-10-16",
+      domaines,
+      deja: 0,
+      exercicesExclus: [],
+      chaineJours: 0,
+    });
+    assert.equal(r.length, 4);
+    assert.ok(r.every((m) => m.domaine === "finance" || m.domaine === "fitness"));
+    assert.ok(r.some((m) => m.domaine === "finance"));
+    assert.ok(r.some((m) => m.domaine === "fitness"));
+    for (const m of r) {
+      assert.equal(m.payload.source, "depart");
+      assert.equal(m.type, "daily");
+      assert.ok(m.duree_min >= 2 && m.duree_min <= 60);
+      assert.equal(m.difficulte, "facile");
+    }
+  });
+
+  it("ne complète pas au-delà de la cible et ignore les exercices déjà posés", () => {
+    const plein = tirerMissionsDepart({
+      userId: "u1",
+      date: "2026-10-16",
+      domaines: ["health"],
+      deja: 3,
+      exercicesExclus: [],
+      chaineJours: 0,
+    });
+    assert.deepEqual(plein, []);
+
+    const exclus = catalogueDepart()
+      .filter((m) => m.domaine === "health")
+      .map((m) => m.exerciceId);
+    const garde = exclus.pop()!;
+    const r = tirerMissionsDepart({
+      userId: "u1",
+      date: "2026-10-16",
+      domaines: ["health"],
+      deja: 2,
+      exercicesExclus: exclus,
+      chaineJours: 0,
+    });
+    assert.equal(r.length, 1);
+    assert.equal(r[0].payload.exerciceId, garde);
+  });
+
+  it("est déterministe, et change d'un jour à l'autre", () => {
+    const args = {
+      userId: "u42",
+      date: "2026-10-16",
+      domaines: ["mind", "discipline"] as DomaineAffiche[],
+      deja: 1,
+      exercicesExclus: [] as string[],
+      chaineJours: 0,
+    };
+    const a = tirerMissionsDepart(args).map((m) => m.payload.exerciceId);
+    const b = tirerMissionsDepart(args).map((m) => m.payload.exerciceId);
+    assert.deepEqual(a, b);
+    assert.equal(a.length, 3);
+    const demain = tirerMissionsDepart({ ...args, date: "2026-10-17" }).map((m) => m.payload.exerciceId);
+    assert.notDeepEqual(a, demain);
   });
 });
 

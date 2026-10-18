@@ -1,6 +1,8 @@
+import { catalogAvecPrefs, type ExercicePref } from "@/lib/catalogue/prefs";
 import { requireUser } from "@/lib/progression/auth-api";
 import type { ContratPersiste } from "@/lib/progression/contrat";
 import { etatDepuisProgression, ligneDepuisSeance, planDuJour } from "@/lib/progression/generer";
+import { cibleMissionsDuJour, domainesChoisis, tirerMissionsDepart } from "@/lib/progression/missions-depart";
 import { jourLocal } from "@/lib/temps";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
@@ -16,6 +18,19 @@ async function missionsDuJour(supabase: SupabaseClient, userId: string, date: st
   return [...parId.values()].sort(
     (a, b) => Number(b.type === "first") - Number(a.type === "first") || a.created_at.localeCompare(b.created_at),
   );
+}
+
+function idsExercice(payload: unknown): string[] {
+  if (!payload || typeof payload !== "object") return [];
+  const p = payload as Record<string, unknown>;
+  const ids: string[] = [];
+  if (typeof p.exerciceId === "string") ids.push(p.exerciceId);
+  if (Array.isArray(p.exerciceIds)) ids.push(...p.exerciceIds.filter((id): id is string => typeof id === "string"));
+  const seance = p.seance as { exercices?: { exerciceId?: string }[] } | undefined;
+  if (Array.isArray(seance?.exercices)) {
+    for (const e of seance.exercices) if (typeof e?.exerciceId === "string") ids.push(e.exerciceId);
+  }
+  return ids;
 }
 
 /** Génère les missions du jour une seule fois (daily_runs) ; recharger la page ne crée aucun doublon. */
@@ -36,8 +51,12 @@ export async function POST() {
 
   let created = false;
   if (!run) {
-    const [{ data: choix }, { data: catalogRow }, { data: progress }, { data: passees }] = await Promise.all([
-      supabase.from("user_skill_choices").select("competence_id, focus_ids, seances_semaine, minutes_max").eq("user_id", user.id),
+    await supabase.rpc("appliquer_modes_du_jour");
+    const [{ data: choix }, { data: catalogRow }, { data: progress }, { data: passees }, { data: prefs }] = await Promise.all([
+      supabase
+        .from("user_skill_choices")
+        .select("competence_id, focus_ids, seances_semaine, minutes_max, mode, mode_en_vigueur")
+        .eq("user_id", user.id),
       supabase.from("custom_catalog").select("data").eq("user_id", user.id).maybeSingle(),
       supabase.from("skill_progress").select("competence_id, focus_id, niveau, palier").eq("user_id", user.id),
       supabase
@@ -47,6 +66,7 @@ export async function POST() {
         .eq("statut", "terminee")
         .order("date_locale", { ascending: true })
         .limit(80),
+      supabase.from("exercice_prefs").select("exercice_id, kind").eq("user_id", user.id),
     ]);
 
     if (choix?.length) {
@@ -59,30 +79,50 @@ export async function POST() {
         })),
         chaineJours: 0,
       });
+      const catalog = catalogAvecPrefs((catalogRow?.data ?? null) as ContratPersiste | null, (prefs ?? []) as ExercicePref[]);
       const plan = planDuJour({
         userId: user.id,
         timezone,
         choix,
-        catalog: (catalogRow?.data ?? null) as ContratPersiste | null,
+        catalog,
         etat,
       });
 
       const { data: dejaLa } = await supabase
         .from("missions")
-        .select("competence_id")
+        .select("competence_id, payload")
         .eq("user_id", user.id)
         .eq("date_locale", date)
         .eq("type", "daily");
       const prises = new Set((dejaLa ?? []).map((m) => m.competence_id));
-      const lignes = (plan.jour?.seances ?? [])
-        .filter((s) => !prises.has(s.competenceId))
-        .map((seance) =>
-          ligneDepuisSeance({
-            userId: user.id,
-            seance,
-            catalog: (catalogRow?.data ?? null) as ContratPersiste | null,
-          }),
-        );
+      const domaines = domainesChoisis(
+        choix.map((c) => c.competence_id),
+        catalog,
+      );
+      const places = Math.max(0, cibleMissionsDuJour(domaines.length) - (dejaLa ?? []).length);
+      const seances = (plan.jour?.seances ?? []).filter((s) => !prises.has(s.competenceId)).slice(0, places);
+      const lignes = seances.map((seance) =>
+        ligneDepuisSeance({
+          userId: user.id,
+          seance,
+          catalog,
+        }),
+      );
+
+      const exercicesExclus = [
+        ...((dejaLa ?? []) as { payload: unknown }[]).flatMap((m) => idsExercice(m.payload)),
+        ...seances.flatMap((s) => s.exercices.map((e) => e.exerciceId)),
+      ];
+      lignes.push(
+        ...tirerMissionsDepart({
+          userId: user.id,
+          date,
+          domaines,
+          deja: (dejaLa ?? []).length + lignes.length,
+          exercicesExclus,
+          chaineJours: etat.chaineJours,
+        }),
+      );
 
       if (lignes.length) {
         const { error } = await supabase.from("missions").insert(lignes);

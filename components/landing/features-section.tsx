@@ -15,7 +15,7 @@ const features = [
     icon: Trophy,
     title: "Rangs",
     description:
-      "De E à SS. Ton rang reflète ta constance sur la durée, pas un coup d'éclat.",
+      "De E à S. Ton rang reflète ta constance sur la durée, pas un coup d'éclat.",
   },
   {
     icon: Target,

@@ -1,4 +1,4 @@
-export type Rank = "E" | "D" | "C" | "B" | "A" | "S" | "SS";
+export type Rank = "E" | "D" | "C" | "B" | "A" | "S";
 
 export type Gender = "male" | "female";
 

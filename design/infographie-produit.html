@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>THEMILION SYSTEM — Infographie produit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04060B;
+      --surface: #080A11;
+      --card: #0B0E18;
+      --panel: #10131F;
+      --border: rgba(255,255,255,0.08);
+      --text: #FAFAFA;
+      --muted: #94A3B8;
+      --violet: #8B5CF6;
+      --blue: #00B4FF;
+      --gold: #FBBF24;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 42%, rgba(139,92,246,0.14), transparent 58%),
+        radial-gradient(ellipse 50% 30% at 50% -8%, rgba(0,180,255,0.10), transparent 55%),
+        var(--bg);
+    }
+    .grid {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0.055;
+      background-image:
+        linear-gradient(to right, #fff 1px, transparent 1px),
+        linear-gradient(to bottom, #fff 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse at 50% 45%, #000 28%, transparent 72%);
+    }
+    .stage {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      padding: 36px 44px 28px;
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      gap: 18px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    header .brand {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.42em;
+      text-indent: 0.42em;
+    }
+    header .kicker {
+      font-size: 11px;
+      letter-spacing: 0.38em;
+      color: var(--violet);
+      font-weight: 500;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr 340px;
+      gap: 28px;
+      min-height: 0;
+    }
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(16,19,31,0.92), rgba(11,14,24,0.88));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px 18px 15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      flex: 1;
+      min-height: 0;
+    }
+    .card h2 {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .goal { margin-bottom: 11px; }
+    .goal:last-child { margin-bottom: 0; }
+    .goal .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .goal .row span:last-child {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .track {
+      height: 6px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--violet), #A78BFA);
+    }
+    .fill.blue { background: linear-gradient(90deg, #3B82F6, var(--blue)); }
+    .fill.teal { background: linear-gradient(90deg, #2DD4BF, #5EEAD4); }
+
+    .mission {
+      display: grid;
+      grid-template-columns: 16px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .mission:last-child { border-bottom: 0; padding-bottom: 0; }
+    .mission:first-of-type { padding-top: 0; }
+    .dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.22);
+    }
+    .dot.on {
+      border-color: var(--violet);
+      background: var(--violet);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.18);
+    }
+    .mission small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+      letter-spacing: 0.04em;
+    }
+    .xp {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .pills {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .pill {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 10px 8px 9px;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+    .pill em {
+      display: block;
+      font-style: normal;
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0;
+    }
+    .pill.active {
+      border-color: rgba(139,92,246,0.45);
+      background: rgba(139,92,246,0.12);
+      color: #EDE9FE;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+    }
+    .stat b {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 15px;
+      letter-spacing: 0;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .stat b.gold { color: var(--gold); }
+    .bar { height: 7px; border-radius: 99px; background: rgba(255,255,255,0.05); overflow: hidden; margin-bottom: 11px; }
+    .bar > i { display: block; height: 100%; border-radius: 99px; }
+
+    .tiers {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tier {
+      flex: 1;
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 8px 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .tier.on {
+      color: var(--gold);
+      border-color: rgba(251,191,36,0.35);
+      background: rgba(251,191,36,0.08);
+      font-weight: 600;
+    }
+    .badge {
+      width: 52px; height: 52px; border-radius: 14px;
+      border: 1px solid rgba(251,191,36,0.35);
+      display: grid; place-items: center;
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 22px; font-weight: 600; color: var(--gold);
+      background: rgba(251,191,36,0.07);
+    }
+    .palier-row { display: flex; gap: 14px; align-items: center; }
+    .palier-row p { font-size: 13px; color: var(--muted); line-height: 1.45; }
+    .palier-row strong { color: var(--text); font-weight: 500; }
+
+    .log {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .log:last-child { border-bottom: 0; }
+    .log time {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      min-height: 0;
+    }
+    .aura {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      width: 640px;
+      height: 560px;
+      transform: translate(-50%, -52%);
+      background: radial-gradient(circle, rgba(139,92,246,0.32) 0%, rgba(139,92,246,0.10) 44%, transparent 70%);
+      filter: blur(10px);
+      pointer-events: none;
+    }
+    .hud {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .chip {
+      background: rgba(11,14,24,0.88);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px 18px 7px;
+      min-width: 102px;
+      text-align: center;
+    }
+    .chip .lbl {
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .chip .val {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 20px;
+      font-weight: 600;
+      margin-top: 1px;
+    }
+    .chip .val.gold { color: var(--gold); }
+    .figures {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 520px;
+    }
+    .fig {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+    }
+    .fig img {
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 22px rgba(139,92,246,0.4));
+    }
+    .fig.male img { height: 520px; }
+    .fig.female { margin-left: -72px; }
+    .fig.female img { height: 500px; }
+
+    .pedestal {
+      position: relative;
+      width: 560px;
+      height: 36px;
+      margin-top: -6px;
+      z-index: 1;
+    }
+    .pedestal .disc {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(139,92,246,0.35), transparent 70%);
+      filter: blur(6px);
+    }
+    .pedestal .ring {
+      position: absolute;
+      left: 8%; right: 8%; top: 10px; height: 14px;
+      border: 1px solid rgba(139,92,246,0.45);
+      border-radius: 50%;
+    }
+    .xp-under {
+      margin-top: 14px;
+      width: 320px;
+      z-index: 2;
+    }
+    .xp-under .stat { margin-bottom: 6px; letter-spacing: 0.18em; }
+    .xp-under .bar { height: 8px; margin: 0; }
+    .xp-under .bar > i {
+      width: 68%;
+      background: linear-gradient(90deg, var(--gold), #FDE68A);
+    }
+
+    .loop {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .node {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .node.on {
+      color: #fff;
+      background: rgba(139,92,246,0.18);
+      border-color: rgba(139,92,246,0.55);
+      box-shadow: 0 0 24px rgba(139,92,246,0.18);
+    }
+    .arrow { color: rgba(255,255,255,0.28); font-size: 14px; }
+
+    .curve {
+      position: absolute;
+      right: 56px;
+      bottom: 86px;
+      width: 220px;
+      height: 70px;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="stage">
+    <header>
+      <div class="brand">THEMILION SYSTEM</div>
+      <div class="kicker">LIFE RPG SYSTEM</div>
+    </header>
+
+    <div class="layout">
+      <div class="col">
+        <article class="card">
+          <h2>OBJECTIFS</h2>
+          <div class="goal">
+            <div class="row"><span>Finance</span><span>72 %</span></div>
+            <div class="track"><div class="fill" style="width:72%"></div></div>
+          </div>
+          <div class="goal">
+            <div class="row"><span>Health</span><span>41 %</span></div>
+            <div class="track"><div class="fill teal" style="width:41%"></div></div>
+          </div>
+          <div class="goal">
+            <div class="row"><span>Discipline</span><span>58 %</span></div>
+            <div class="track"><div class="fill blue" style="width:58%"></div></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>MISSIONS DU JOUR</h2>
+          <div class="mission">
+            <span class="dot"></span>
+            <div>Trois priorités<small>Discipline · Facile</small></div>
+            <span class="xp">+10 XP</span>
+          </div>
+          <div class="mission">
+            <span class="dot on"></span>
+            <div>Lecture 15 min<small>Mind · Facile</small></div>
+            <span class="xp">+10 XP</span>
+          </div>
+          <div class="mission">
+            <span class="dot"></span>
+            <div>Première séance<small>Fitness · Difficile</small></div>
+            <span class="xp">+50 XP</span>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>COMPÉTENCES</h2>
+          <div class="pills">
+            <div class="pill active">Finance<em>Niv. 3</em></div>
+            <div class="pill">Mind<em>Niv. 2</em></div>
+            <div class="pill">Health<em>Niv. 2</em></div>
+            <div class="pill active">Fitness<em>Niv. 3</em></div>
+            <div class="pill">Discipline<em>Niv. 2</em></div>
+            <div class="pill">Life<em>Niv. 1</em></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="hero">
+        <div class="aura"></div>
+        <div class="hud">
+          <div class="chip">
+            <div class="lbl">LEVEL</div>
+            <div class="val">28</div>
+          </div>
+          <div class="chip">
+            <div class="lbl">XP</div>
+            <div class="val gold">4 820</div>
+          </div>
+          <div class="chip">
+            <div class="lbl">RANG</div>
+            <div class="val gold">C</div>
+          </div>
+          <div class="chip">
+            <div class="lbl">POWER</div>
+            <div class="val">86</div>
+          </div>
+        </div>
+        <div class="figures">
+          <div class="fig male">
+            <img src="../public/character/male.png" alt="Personnage masculin">
+          </div>
+          <div class="fig female">
+            <img src="../public/character/female.png" alt="Personnage féminin">
+          </div>
+        </div>
+        <div class="pedestal"><div class="disc"></div><div class="ring"></div></div>
+        <div class="xp-under">
+          <div class="stat"><span>PROGRESSION</span><b class="gold">68 %</b></div>
+          <div class="bar"><i></i></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <article class="card">
+          <h2>PROGRESSION</h2>
+          <div class="stat">NIVEAU <b>28</b></div>
+          <div class="bar"><i style="width:68%;background:linear-gradient(90deg,#8B5CF6,#00B4FF)"></i></div>
+          <div class="stat">XP <b class="gold">4 820</b></div>
+          <div class="bar"><i style="width:68%;background:linear-gradient(90deg,#FBBF24,#FDE68A)"></i></div>
+          <div class="stat">RANG <b class="gold">C</b></div>
+          <div class="bar"><i style="width:44%;background:linear-gradient(90deg,#FBBF24,#B45309)"></i></div>
+          <div class="stat">POWER <b>86</b></div>
+          <div class="bar" style="margin-bottom:0"><i style="width:72%;background:linear-gradient(90deg,#00B4FF,#67E8F9)"></i></div>
+        </article>
+
+        <article class="card">
+          <h2>PALIER</h2>
+          <div class="palier-row">
+            <div class="badge">C</div>
+            <p><strong>Palier Or</strong><br>Niveaux 20–34 · Rang C</p>
+          </div>
+          <div class="tiers">
+            <div class="tier">BRONZE</div>
+            <div class="tier">ARGENT</div>
+            <div class="tier on">OR</div>
+            <div class="tier">ÉMERAUDE</div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>JOURNAL</h2>
+          <div class="log"><time>08:12</time><span>Mission validée</span><span class="xp">+25 XP</span></div>
+          <div class="log"><time>07:40</time><span>Lecture 15 min</span><span class="xp">+10 XP</span></div>
+          <div class="log"><time>06:55</time><span>Première séance</span><span class="xp">+50 XP</span></div>
+        </article>
+      </div>
+    </div>
+
+    <div class="loop">
+      <span class="node">OBJECTIF</span><span class="arrow">→</span>
+      <span class="node">MISSION</span><span class="arrow">→</span>
+      <span class="node on">ACTION</span><span class="arrow">→</span>
+      <span class="node">XP</span><span class="arrow">→</span>
+      <span class="node">PROGRESSION</span><span class="arrow">→</span>
+      <span class="node">NOUVEL OBJECTIF</span>
+    </div>
+
+    <svg class="curve" viewBox="0 0 220 70" fill="none" aria-hidden="true">
+      <path d="M4 58 C 40 56, 60 48, 88 36 S 150 8, 216 6" stroke="#00B4FF" stroke-width="2" opacity="0.85"/>
+      <circle cx="4" cy="58" r="3.5" fill="#8B5CF6"/>
+      <circle cx="88" cy="36" r="3.5" fill="#8B5CF6"/>
+      <circle cx="150" cy="14" r="3.5" fill="#00B4FF"/>
+      <circle cx="216" cy="6" r="4" fill="#00B4FF"/>
+    </svg>
+
+    <footer>Chaque action compte. Chaque progrès construit la suite.</footer>
+  </div>
+</body>
+</html>

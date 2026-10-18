@@ -1,11 +1,10 @@
 "use client";
 
 import TextShimmer from "@/components/magicui/text-shimmer";
-import { SystemBlock } from "@/components/system/system-block";
 import { Button } from "@/components/ui/button";
-import { landingPreview } from "@/config/user";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { useInView } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 
@@ -38,7 +37,7 @@ export default function HeroSection() {
       </p>
       <Button
         asChild
-        className="group translate-y-[-1rem] animate-fade-in gap-1 rounded-lg opacity-0 ease-in-out [--animation-delay:600ms]"
+        className="group translate-y-[-1rem] animate-fade-in gap-1 rounded-lg bg-brand-blue! text-background! opacity-0 shadow-none ease-in-out [--animation-delay:600ms] hover:bg-brand-blue/90!"
       >
         <Link href="#waitlist">
           <span>Rejoindre la liste d’attente</span>
@@ -47,11 +46,20 @@ export default function HeroSection() {
       </Button>
       <div
         ref={ref}
-        className={`relative mt-[8rem] animate-fade-up opacity-0 [--animation-delay:400ms] before:pointer-events-none before:absolute before:bottom-1/2 before:left-0 before:top-0 before:h-full before:w-full before:opacity-0 before:[filter:blur(180px)] before:[background-image:linear-gradient(to_bottom,var(--color-one),var(--color-one),transparent_40%)] ${
+        className={`relative mt-16 animate-fade-up opacity-0 [--animation-delay:400ms] before:pointer-events-none before:absolute before:bottom-1/2 before:left-0 before:top-0 before:h-full before:w-full before:opacity-0 before:[filter:blur(180px)] before:[background-image:linear-gradient(to_bottom,var(--color-one),var(--color-one),transparent_40%)] ${
           inView ? "before:animate-image-glow" : ""
         }`}
       >
-        <SystemBlock player={landingPreview} />
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <Image
+            src="/landing/infographie-produit.png"
+            alt="THEMILION SYSTEM : personnages, missions du jour, compétences, XP et boucle de progression"
+            width={1920}
+            height={1080}
+            priority
+            className="h-auto w-full"
+          />
+        </div>
       </div>
     </section>
   );
