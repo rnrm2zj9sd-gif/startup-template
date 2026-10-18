@@ -20,12 +20,11 @@ function lireEnvLocal(): void {
   }
 }
 
-async function main(): Promise<void> {
-  lireEnvLocal();
+export async function appliquerSchema(): Promise<number> {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error("DATABASE_URL absent de .env.local (ou fichier non enregistré).");
-    process.exit(1);
+    console.error("DATABASE_URL absent.");
+    return 1;
   }
 
   const fichiers = readdirSync(SCHEMA_DIR)
@@ -61,10 +60,18 @@ async function main(): Promise<void> {
     const manquants = verification.rows.filter((r) => !r.present);
     console.log(manquants.length === 0 ? "Tout est présent." : `${manquants.length} élément(s) manquant(s).`);
   }
-  if (echecs > 0) process.exit(1);
+  return echecs;
 }
 
-main().catch((e) => {
-  console.error("Connexion impossible :", (e as Error).message);
-  process.exit(1);
-});
+async function main(): Promise<void> {
+  lireEnvLocal();
+  const code = await appliquerSchema();
+  if (code > 0) process.exit(code);
+}
+
+if (/[/\\]appliquer-sql\.(ts|js|mts|cts|mjs|cjs)$/.test(process.argv[1] ?? "")) {
+  main().catch((e) => {
+    console.error("Connexion impossible :", (e as Error).message);
+    process.exit(1);
+  });
+}

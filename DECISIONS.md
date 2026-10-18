@@ -193,6 +193,18 @@ Les boucliers absorbent les accidents de la vie. La division par deux fait baiss
 
 ---
 
+## D10 — Tests e2e sur un projet Supabase de test séparé
+
+**Statut :** appliqué le 18/10/2026.
+
+**Choisi :** un projet Supabase dédié, THEMILION-TEST (`wpiyjbdsrmgadjosbhvw`). Les tests e2e et `db:apply:test` ne lisent que `.env.test`. Un garde-fou refuse toute URL, base ou clé service qui ne vise pas ce projet. Le serveur Playwright tourne sur le port 3100, avec ces variables, et ne réutilise jamais le serveur du port 3000. L'inscription passe par l'interface : « Confirm email » est désactivé sur le projet de test, donc la session s'ouvre vraiment. La CI ne teste que le commit construit sur place, et un déploiement ne lance les tests que pour l'environnement Preview.
+
+**Rejeté :** lancer les e2e sur la base de production. Rejeté aussi le repli admin à l'inscription (créer ou confirmer le compte par la clé service, puis se connecter).
+
+**Pourquoi :** le quota d'e-mails de la production ne doit pas servir aux tests. Les données de production ne doivent être ni lues ni écrites. L'inscription doit être réellement testée, pas contournée par un compte créé côté admin.
+
+---
+
 ## Décisions ouvertes
 
 - [ ] Durée du rang S : 20,5 mois (K = 40), 12 mois (K = 24) ou 29 mois (K = 56) ?

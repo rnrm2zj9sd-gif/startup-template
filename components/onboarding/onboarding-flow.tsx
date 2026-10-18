@@ -224,6 +224,7 @@ export function OnboardingFlow() {
                   <button
                     key={m}
                     type="button"
+                    data-testid={`onboarding-materiel-${m}`}
                     aria-pressed={on}
                     onClick={() => setMateriel((prev) => (on ? prev.filter((x) => x !== m) : [...prev, m]))}
                     className={chip(on)}
@@ -345,6 +346,7 @@ function EtapeCompetences({
                   type="button"
                   data-testid="onboarding-competence"
                   data-competence-id={c.id}
+                  data-domaine={domaine}
                   aria-pressed={Boolean(actif)}
                   onClick={() => onToggle(c.id)}
                   className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
@@ -365,7 +367,16 @@ function EtapeCompetences({
                     {c.focus.map((f) => {
                       const on = !actif.focusIds.length || actif.focusIds.includes(f.id);
                       return (
-                        <button key={f.id} type="button" aria-pressed={on} onClick={() => onZone(c.id, f.id)} className={chip(on)}>
+                        <button
+                          key={f.id}
+                          type="button"
+                          data-testid="onboarding-zone"
+                          data-competence-id={c.id}
+                          data-focus-id={f.id}
+                          aria-pressed={on}
+                          onClick={() => onZone(c.id, f.id)}
+                          className={chip(on)}
+                        >
                           {f.nom}
                         </button>
                       );

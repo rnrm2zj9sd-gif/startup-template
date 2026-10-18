@@ -299,7 +299,7 @@ async function testReadonly(a: Awaited<ReturnType<typeof signIn>>) {
   ] as const;
 
   for (const table of readonly) {
-    const { error: insErr } = await a.supabase.from(table.name).insert(table.insert);
+    const { error: insErr } = await a.supabase.from(table.name).insert(table.insert as never);
     record(`2 A n'insère pas ${table.name}`, insErr ? "OK" : "ÉCHEC", insErr?.message ?? "INSERT accepté");
 
     const { data: upd, error: updErr } = await a.supabase.from(table.name).update(table.patch as Record<string, unknown>).eq("user_id", a.user.id).select("*");

@@ -66,7 +66,7 @@ export function ProgressionStats({ snap }: { snap: ProgressionSnapshot }) {
         <p className="mt-2 font-mono text-4xl font-light tabular-nums" data-serie={snap.serie.serie}>
           {snap.serie.serie}
           <span className="ml-1 text-base text-muted-foreground">
-            {snap.serie.serie === 1 ? "jour" : "jours"}
+            {snap.serie.serie === 1 ? " jour" : " jours"}
           </span>
         </p>
         <p className="mt-2 text-sm text-muted-foreground">

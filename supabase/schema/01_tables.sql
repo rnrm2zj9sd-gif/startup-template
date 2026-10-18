@@ -299,7 +299,7 @@ create table if not exists public.level_thresholds (
 );
 create table if not exists public.xp_events (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id),
+  user_id uuid not null references auth.users (id) on delete cascade,
   source text not null,
   quest_id uuid,
   domain text,

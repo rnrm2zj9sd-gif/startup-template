@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-/** Visible uniquement si le serveur le monte (NODE_ENV === "development"). */
 export function DevPasswordLogin({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -40,10 +40,7 @@ export function DevPasswordLogin({ nextPath }: { nextPath: string }) {
 
   return (
     <div className="flex flex-col gap-4 border-t border-border pt-6">
-      <p className="text-xs tracking-[0.3em] text-muted-foreground">DEV — MOT DE PASSE</p>
-      <p className="text-sm text-muted-foreground">
-        Uniquement en local. Crée tes comptes dans Supabase → Authentication → Users.
-      </p>
+      <p className="text-xs tracking-[0.3em] text-muted-foreground">MOT DE PASSE</p>
       <form data-testid="login-form" onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="grid gap-2">
           <Label htmlFor="dev-email">E-mail</Label>
@@ -77,6 +74,11 @@ export function DevPasswordLogin({ nextPath }: { nextPath: string }) {
           Entrer avec mot de passe
         </Button>
       </form>
+      <p className="text-center text-sm text-muted-foreground">
+        <Link href="/mot-de-passe-oublie" className="underline underline-offset-4 hover:text-foreground">
+          Mot de passe oublié
+        </Link>
+      </p>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { SupprimerComptePanel } from "@/components/dashboard/supprimer-compte";
 import { CharacterPicker } from "@/components/system/character-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +109,7 @@ export function SettingsPageContent() {
     <div className="flex flex-col gap-10">
       <SettingsForm />
       <CompetencesLink />
+      <SupprimerComptePanel />
     </div>
   );
 }

@@ -1,7 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/auth/callback", "/api/health", "/manifest.webmanifest"]);
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/mot-de-passe-oublie",
+  "/supprimer-compte",
+  "/auth/callback",
+  "/api/health",
+  "/manifest.webmanifest",
+]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -60,7 +69,12 @@ export async function updateSession(request: NextRequest) {
   const { data: profile } = await supabase.from("profiles").select("onboarding_done").eq("id", user.id).maybeSingle();
   const onboardingDone = Boolean(profile?.onboarding_done);
 
-  if (pathname === "/login" || pathname === "/signup" || (onboardingDone && pathname.startsWith("/onboarding"))) {
+  if (
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/mot-de-passe-oublie" ||
+    (onboardingDone && pathname.startsWith("/onboarding"))
+  ) {
     const dest = request.nextUrl.clone();
     dest.pathname = onboardingDone ? "/dashboard" : "/onboarding";
     dest.search = "";
@@ -69,7 +83,13 @@ export async function updateSession(request: NextRequest) {
     return redirect;
   }
 
-  if (!onboardingDone && !pathname.startsWith("/onboarding") && !isPublicPath(pathname) && !pathname.startsWith("/api/")) {
+  if (
+    !onboardingDone &&
+    !pathname.startsWith("/onboarding") &&
+    pathname !== "/nouveau-mot-de-passe" &&
+    !isPublicPath(pathname) &&
+    !pathname.startsWith("/api/")
+  ) {
     const dest = request.nextUrl.clone();
     dest.pathname = "/onboarding";
     dest.search = "";

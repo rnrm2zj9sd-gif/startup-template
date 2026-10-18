@@ -33,7 +33,7 @@ export default async function LoginPage({
         <div className="flex flex-col gap-2 text-center">
           <p className="text-xs tracking-[0.3em] text-brand-purple">SYSTEM ONLINE</p>
           <h1 className="text-2xl font-semibold tracking-tight">Connexion</h1>
-          <p className="text-sm text-muted-foreground">Entre ton e-mail. On t&apos;envoie un lien, sans mot de passe.</p>
+          <p className="text-sm text-muted-foreground">Lien magique ou mot de passe. Tu peux aussi récupérer ton compte.</p>
         </div>
 
         {params.error ? (
@@ -41,10 +41,7 @@ export default async function LoginPage({
         ) : null}
 
         <LoginForm nextPath={nextPath} />
-
-        {process.env.NODE_ENV === "development" || process.env.E2E_PASSWORD_LOGIN === "1" ? (
-          <DevPasswordLogin nextPath={nextPath} />
-        ) : null}
+        <DevPasswordLogin nextPath={nextPath} />
 
         <p className="text-center text-sm text-muted-foreground">
           <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">

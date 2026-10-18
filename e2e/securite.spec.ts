@@ -1,13 +1,15 @@
 import { expect, test } from "@playwright/test";
 import {
-  admin,
   appelNavigateur,
   connecter,
   creerConfirme,
   emailE2E,
   jetonSession,
+  lireAdmin,
   lireLedger,
+  lireMissionAutre,
   motDePasseE2E,
+  poserMissionAutre,
   supprimerEmail,
 } from "./helpers";
 
@@ -23,17 +25,7 @@ test("le navigateur ne peut pas écrire le ledger, le statut, is_admin, ni lire 
   try {
     userId = await creerConfirme(email, password);
     autreId = await creerConfirme(autreEmail, autrePassword);
-    const { error: missionError } = await admin().from("missions").insert({
-      user_id: autreId,
-      date_locale: new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()),
-      type: "daily",
-      domaine: "life",
-      competence_id: "e2e",
-      titre: secret,
-      payload: { source: "libre" },
-      statut: "a_faire",
-    });
-    if (missionError) throw new Error(missionError.message);
+    await poserMissionAutre(autreId, secret);
 
     await connecter(page, email, password);
     const token = jetonSession(await page.context().cookies());
@@ -55,14 +47,13 @@ test("le navigateur ne peut pas écrire le ledger, le statut, is_admin, ni lire 
       { statut: "terminee" },
     );
     expect(updateMission.status).toBeGreaterThanOrEqual(400);
-    const { data: missionAutre } = await admin().from("missions").select("statut, titre").eq("user_id", autreId).single();
+    const missionAutre = await lireMissionAutre(autreId);
     expect(missionAutre?.statut).toBe("a_faire");
     expect(missionAutre?.titre).toBe(secret);
 
     const updateAdmin = await appelNavigateur(page, token, `profiles?id=eq.${userId}`, "PATCH", { is_admin: true });
     expect(updateAdmin.status).toBeGreaterThanOrEqual(400);
-    const { data: profil } = await admin().from("profiles").select("is_admin").eq("id", userId).single();
-    expect(profil?.is_admin).toBe(false);
+    expect(await lireAdmin(userId)).toBe(false);
 
     const lireProfil = await appelNavigateur(page, token, `profiles?select=id,pseudo&id=eq.${autreId}`, "GET");
     const lireMissionsAutre = await appelNavigateur(

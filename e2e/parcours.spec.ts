@@ -1,7 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
-  confirmerOuCreer,
-  connecter,
   emailE2E,
   idDepuisEmail,
   lireLedger,
@@ -25,18 +23,11 @@ async function inscrire(page: Page, email: string, password: string): Promise<st
 
   const confirmation = page.getByTestId("signup-check-email");
   const pseudo = page.getByTestId("onboarding-pseudo");
-  await expect(confirmation.or(pseudo)).toBeVisible();
+  const erreur = page.getByTestId("signup-error");
+  await expect(confirmation.or(pseudo).or(erreur)).toBeVisible();
 
-  if (await confirmation.isVisible()) {
-    test.info().annotations.push({
-      type: "inscription",
-      description:
-        "Confirmation e-mail active : compte confirmé ou créé via l'API admin (email_confirm=true), puis connexion par l'interface.",
-    });
-    const id = await confirmerOuCreer(email, password);
-    await connecter(page, email, password);
-    await expect(page.getByTestId("onboarding-pseudo")).toBeVisible();
-    return id;
+  if (await confirmation.isVisible() || await erreur.isVisible()) {
+    throw new Error("Confirm email actif sur le projet de test");
   }
 
   test.info().annotations.push({
@@ -48,19 +39,36 @@ async function inscrire(page: Page, email: string, password: string): Promise<st
   return id;
 }
 
+async function garderZone(page: Page, competenceId: string, focusId: string) {
+  const zones = page.locator(`[data-testid="onboarding-zone"][data-competence-id="${competenceId}"]`);
+  const ids = await zones.evaluateAll((els) => els.map((el) => el.getAttribute("data-focus-id")));
+  for (const id of ids) {
+    if (!id || id === focusId) continue;
+    const zone = page.locator(
+      `[data-testid="onboarding-zone"][data-competence-id="${competenceId}"][data-focus-id="${id}"]`,
+    );
+    if ((await zone.getAttribute("aria-pressed")) === "true") await zone.click();
+  }
+}
+
 async function terminerOnboarding(page: Page) {
   await page.getByTestId("onboarding-pseudo").fill("Joueur E2E");
   await page.getByTestId("gender-male").click();
   await page.getByTestId("onboarding-continuer").click();
 
-  const competences = page.getByTestId("onboarding-competence");
-  await expect(competences.first()).toBeVisible();
-  await competences.nth(0).click();
-  await competences.nth(1).click();
-  await competences.nth(2).click();
+  const choix = [
+    { id: "education-financiere", zone: "culture-finance" },
+    { id: "hygiene-de-vie", zone: "alimentation" },
+    { id: "endurance", zone: "cardio" },
+  ];
+  for (const choixCompetence of choix) {
+    await page.locator(`[data-testid="onboarding-competence"][data-competence-id="${choixCompetence.id}"]`).click();
+    await garderZone(page, choixCompetence.id, choixCompetence.zone);
+  }
   await page.getByTestId("onboarding-continuer").click();
 
   await page.getByTestId("onboarding-budget-60").click();
+  await page.getByTestId("onboarding-materiel-telephone").click();
   await page.getByTestId("onboarding-continuer").click();
   await page.getByTestId("onboarding-commencer").click();
   await expect(page.getByTestId("onboarding-victoire")).toBeVisible();
@@ -76,6 +84,10 @@ test("parcours joueur vierge", async ({ page }) => {
   const email = emailE2E();
   const password = motDePasseE2E();
   let userId = "";
+  const fuites: string[] = [];
+  page.on("request", (req) => {
+    if (req.url().includes("kazdyhxetsevlpxexmof")) fuites.push(req.url());
+  });
 
   try {
     expect(await xpPourNiveau(1)).toBe(40);
@@ -152,6 +164,7 @@ test("parcours joueur vierge", async ({ page }) => {
     const ledgerApres = await lireLedger(userId);
     expect(ledgerApres).toHaveLength(ledgerAvant.length);
     expect(sommeLedger(ledgerApres)).toBe(sommeLedger(ledgerAvant));
+    expect(fuites).toEqual([]);
   } finally {
     await supprimerEmail(email);
   }

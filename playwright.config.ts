@@ -3,8 +3,15 @@ import { chargerEnv } from "./e2e/helpers";
 
 chargerEnv();
 
-const baseURL = process.env.E2E_BASE_URL?.trim() || "http://localhost:3000";
-const apercuDistant = Boolean(process.env.E2E_BASE_URL?.trim()) && !/localhost|127\.0\.0\.1/.test(baseURL);
+const baseURL = "http://localhost:3100";
+
+function envServeur(): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [cle, valeur] of Object.entries(process.env)) {
+    if (typeof valeur === "string") env[cle] = valeur;
+  }
+  return env;
+}
 
 export default defineConfig({
   testDir: "./e2e",
@@ -30,12 +37,11 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
-  webServer: apercuDistant
-    ? undefined
-    : {
-        command: process.env.CI ? "pnpm build && pnpm start" : "pnpm dev",
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-        timeout: 180_000,
-      },
+  webServer: {
+    command: process.env.CI ? "pnpm build && pnpm start --port 3100" : "pnpm dev --port 3100",
+    url: baseURL,
+    reuseExistingServer: false,
+    timeout: 180_000,
+    env: envServeur(),
+  },
 });

@@ -1,0 +1,34 @@
+import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ChevronLeft } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Mot de passe oublié — THEMILION SYSTEM",
+  description: "Récupère ton compte par e-mail.",
+};
+
+export default function MotDePasseOubliePage() {
+  return (
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-16">
+      <Link
+        href="/login"
+        className={cn(buttonVariants({ variant: "ghost" }), "absolute left-4 top-4 md:left-8 md:top-8")}
+      >
+        <ChevronLeft className="mr-2 size-4" aria-hidden />
+        Connexion
+      </Link>
+
+      <div className="mx-auto flex w-full max-w-md flex-col gap-8 rounded-2xl border border-border bg-card p-6 md:p-8">
+        <div className="flex flex-col gap-2 text-center">
+          <p className="text-xs tracking-[0.3em] text-brand-purple">SYSTEM ONLINE</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Mot de passe oublié</h1>
+          <p className="text-sm text-muted-foreground">On t&apos;envoie un lien pour récupérer ton compte.</p>
+        </div>
+        <ForgotPasswordForm />
+      </div>
+    </div>
+  );
+}
