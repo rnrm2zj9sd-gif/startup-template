@@ -551,3 +551,51 @@ create trigger calendar_events_limites
   before insert or update or delete on public.calendar_events
   for each row execute function public._calendar_events_limites();
 
+-- Journal : palier de série atteint et bouclier gagné, à la première XP du jour
+create or replace function public._serie_journal()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  tz text;
+  jour date;
+  e jsonb;
+  s integer;
+begin
+  select p.timezone into tz from public.profiles p where p.id = new.user_id;
+  jour := public.jour_local(new.created_at, tz);
+
+  if exists (
+    select 1 from public.xp_ledger l
+    where l.user_id = new.user_id
+      and l.id <> new.id
+      and public.jour_local(l.created_at, tz) = jour
+  ) then
+    return null;
+  end if;
+
+  e := public.serie_etat(new.user_id, tz, jour);
+  s := (e->>'serie')::integer;
+
+  if s = any (array[3, 7, 14, 30, 60, 100, 180, 365]) then
+    insert into public.system_log (user_id, type, payload)
+    values (new.user_id, 'serie_palier',
+            jsonb_build_object('jours', s, 'nouveauRecord', (e->>'nouveauRecord')::boolean));
+  end if;
+
+  if (e->>'bouclierGagneAujourdhui')::boolean then
+    insert into public.system_log (user_id, type, payload)
+    values (new.user_id, 'bouclier_gagne', jsonb_build_object('boucliers', (e->>'boucliers')::integer));
+  end if;
+
+  return null;
+end;
+$$;
+
+drop trigger if exists xp_ledger_serie on public.xp_ledger;
+create trigger xp_ledger_serie
+  after insert on public.xp_ledger
+  for each row execute function public._serie_journal();
+

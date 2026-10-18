@@ -42,7 +42,9 @@ export default async function LoginPage({
 
         <LoginForm nextPath={nextPath} />
 
-        {process.env.NODE_ENV === "development" ? <DevPasswordLogin nextPath={nextPath} /> : null}
+        {process.env.NODE_ENV === "development" || process.env.E2E_PASSWORD_LOGIN === "1" ? (
+          <DevPasswordLogin nextPath={nextPath} />
+        ) : null}
 
         <p className="text-center text-sm text-muted-foreground">
           <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">

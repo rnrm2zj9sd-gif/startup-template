@@ -9,6 +9,7 @@ import {
 } from "@/lib/progression/config";
 import type { ProgressionSnapshot } from "@/lib/progression/types";
 import { formatXP } from "@/lib/system";
+import { Shield } from "lucide-react";
 
 export function ProgressionStats({ snap }: { snap: ProgressionSnapshot }) {
   const d = snap.disciplineDetail;
@@ -58,6 +59,54 @@ export function ProgressionStats({ snap }: { snap: ProgressionSnapshot }) {
           <Partie label="Jours actifs" poids={25} valeur={d.partActifs} detail={`${d.joursActifs} / ${DISCIPLINE_JOURS}`} />
           <Partie label="Reports honorés" poids={15} valeur={d.partReports} detail={`${d.reporteesFaites} / ${d.reportees}`} />
         </ul>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-5 md:p-6" data-block="serie">
+        <h2 className="text-[11px] tracking-[0.3em] text-muted-foreground">SÉRIE</h2>
+        <p className="mt-2 font-mono text-4xl font-light tabular-nums" data-serie={snap.serie.serie}>
+          {snap.serie.serie}
+          <span className="ml-1 text-base text-muted-foreground">
+            {snap.serie.serie === 1 ? "jour" : "jours"}
+          </span>
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {snap.serie.aujourdHuiValide
+            ? "Validée aujourd'hui"
+            : snap.serie.serie > 0
+              ? "À valider avant minuit"
+              : "Valide une mission pour lancer ta série"}
+        </p>
+        <div className="mt-4 flex items-center gap-2">
+          {Array.from({ length: snap.serie.bouclierMax }, (_, i) => {
+            const actif = i < snap.serie.boucliers;
+            return (
+              <Shield
+                key={i}
+                aria-label={actif ? "Bouclier actif" : "Bouclier vide"}
+                className={actif ? "size-5 text-primary" : "size-5 text-muted-foreground"}
+                fill={actif ? "currentColor" : "none"}
+                strokeWidth={1.5}
+              />
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {snap.serie.boucliers === snap.serie.bouclierMax
+            ? "Stock plein"
+            : `Prochain bouclier dans ${snap.serie.joursVersBouclier} j`}
+        </p>
+        {snap.serie.evenementHier && snap.serie.dernierEvenement?.type === "bouclier" ? (
+          <p className="mt-3 text-sm text-foreground">Bouclier utilisé hier : série protégée</p>
+        ) : null}
+        {snap.serie.evenementHier && snap.serie.dernierEvenement?.type === "moitie" ? (
+          <p className="mt-3 text-sm text-foreground">
+            Jour manqué hier : série {snap.serie.dernierEvenement.avant} → {snap.serie.dernierEvenement.apres}
+          </p>
+        ) : null}
+        <p className="mt-3 font-mono text-xs tabular-nums text-muted-foreground">
+          Record {snap.serie.record} j · Bonus XP +{snap.serie.bonusXpPct} %
+          {snap.serie.prochainPalier != null ? ` · Prochain palier ${snap.serie.prochainPalier} j` : ""}
+        </p>
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5 md:p-6" data-block="xp-30j">

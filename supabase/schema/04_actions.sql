@@ -715,6 +715,7 @@ begin
     'power', public._ps_power(uid, niv_json),
     'classe', public._ps_classe(uid, tz, jour, missions_n),
     'discipline', public._ps_discipline(uid, jour),
+    'serie', public.serie_etat(uid, tz, jour),
     'chaineJours', public.chaine_affichage_of(uid, tz, jour),
     'missionsValidees', missions_n,
     'xpParDomaine', xp_json,

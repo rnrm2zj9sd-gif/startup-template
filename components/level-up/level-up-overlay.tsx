@@ -190,6 +190,7 @@ function Overlay({ event, onClose }: { event: LevelUpEvent; onClose: () => void 
           <motion.button
             ref={buttonRef}
             type="button"
+            data-testid="level-up-continuer"
             onClick={onClose}
             className="mt-3 inline-flex min-h-12 items-center rounded-xl px-8 text-xs font-medium tracking-[0.22em] text-[#F5F5F7] outline-none focus-visible:ring-2"
             style={{ border: `1px solid rgba(${rgb}, 0.55)`, background: `rgba(${rgb}, 0.12)` }}

@@ -121,74 +121,120 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.chaine_jours_of(p_user_id uuid, p_tz text, p_jour date)
- RETURNS integer
- LANGUAGE plpgsql
- STABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+-- Séries de jours : règle pure (miroir exact de lib/progression/serie.ts)
+create or replace function public.serie_depuis_jours(p_jours date[], p_jour date)
+returns jsonb
+language plpgsql
+immutable
+set search_path = ''
+as $$
 declare
-  chaine integer := 0;
-  derniere date := null;
-  d date;
-  ecart integer;
+  jours date[] := array(
+    select distinct j from unnest(coalesce(p_jours, '{}'::date[])) as j
+    where j <= p_jour order by 1
+  );
+  d date := jours[1];
+  serie integer := 0;
+  boucliers integer := 0;
+  compteur integer := 0;
+  meilleure integer := 0;
+  evt jsonb := null;
+  serie_hier integer;
+  valide_aujourdhui boolean;
+  bouclier_gagne boolean := false;
+  nouveau_record boolean := false;
+  apres integer;
 begin
-  for d in
-    select distinct public.jour_local(l.created_at, p_tz)
-    from public.xp_ledger l
-    where l.user_id = p_user_id
-      and public.jour_local(l.created_at, p_tz) < p_jour
-    order by 1
-  loop
-    if derniere is null then
-      chaine := 1;
-    else
-      ecart := d - derniere;
-      if ecart <= 2 then
-        chaine := chaine + 1;
-      else
-        chaine := floor(chaine / 2) + 1;
+  while d is not null and d < p_jour loop
+    if d = any (jours) then
+      serie := serie + 1;
+      compteur := compteur + 1;
+      if compteur >= 7 then
+        boucliers := least(2, boucliers + 1);
+        compteur := 0;
       end if;
+      meilleure := greatest(meilleure, serie);
+    else
+      if serie > 0 then
+        if boucliers > 0 then
+          boucliers := boucliers - 1;
+          evt := jsonb_build_object('type', 'bouclier', 'jour', d, 'serie', serie);
+        else
+          apres := serie / 2;
+          evt := jsonb_build_object('type', 'moitie', 'jour', d, 'avant', serie, 'apres', apres);
+          serie := apres;
+        end if;
+      end if;
+      compteur := 0;
     end if;
-    derniere := d;
+    d := d + 1;
   end loop;
-  return chaine;
-end;
-$function$
-;
 
-CREATE OR REPLACE FUNCTION public.chaine_affichage_of(p_user_id uuid, p_tz text, p_jour date)
- RETURNS integer
- LANGUAGE plpgsql
- STABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-declare
-  chaine integer := 0;
-  derniere date := null;
-  d date;
-  ecart integer;
-begin
-  for d in
-    select distinct public.jour_local(l.created_at, p_tz)
-    from public.xp_ledger l
-    where l.user_id = p_user_id
-      and public.jour_local(l.created_at, p_tz) <= p_jour
-    order by 1
-  loop
-    if derniere is null then
-      chaine := 1;
-    else
-      ecart := d - derniere;
-      if ecart <= 2 then
-        chaine := chaine + 1;
-      else
-        chaine := floor(chaine / 2) + 1;
-      end if;
+  serie_hier := serie;
+  valide_aujourdhui := p_jour = any (jours);
+  if valide_aujourdhui then
+    serie := serie + 1;
+    compteur := compteur + 1;
+    if compteur >= 7 then
+      bouclier_gagne := boucliers < 2;
+      boucliers := least(2, boucliers + 1);
+      compteur := 0;
     end if;
-    derniere := d;
-  end loop;
-  return chaine;
+    nouveau_record := serie > meilleure;
+    meilleure := greatest(meilleure, serie);
+  end if;
+
+  return jsonb_build_object(
+    'serie', serie,
+    'serieHier', serie_hier,
+    'aujourdHuiValide', valide_aujourdhui,
+    'boucliers', boucliers,
+    'bouclierMax', 2,
+    'joursVersBouclier', 7 - compteur,
+    'bouclierGagneAujourdhui', bouclier_gagne,
+    'record', meilleure,
+    'nouveauRecord', nouveau_record,
+    'dernierEvenement', evt,
+    'evenementHier', coalesce((evt->>'jour')::date = p_jour - 1, false),
+    'prochainPalier', (select min(p) from unnest(array[3, 7, 14, 30, 60, 100, 180, 365]) as p where p > serie),
+    'bonusXpPct', least(30, 2 * serie_hier)
+  );
 end;
-$function$
-;
+$$;
+
+-- Série d'un joueur, depuis son journal d'XP (jour local du joueur)
+create or replace function public.serie_etat(p_user_id uuid, p_tz text, p_jour date)
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $$
+  select public.serie_depuis_jours(
+    array(
+      select distinct public.jour_local(l.created_at, p_tz)
+      from public.xp_ledger l
+      where l.user_id = p_user_id
+    ),
+    p_jour
+  );
+$$;
+
+-- Série d'hier : sert au bonus XP du jour (signature inchangée)
+create or replace function public.chaine_jours_of(p_user_id uuid, p_tz text, p_jour date)
+returns integer
+language sql
+stable
+set search_path = ''
+as $$
+  select (public.serie_etat(p_user_id, p_tz, p_jour)->>'serieHier')::integer;
+$$;
+
+-- Série affichée : celle d'hier, +1 si aujourd'hui est validé (signature inchangée)
+create or replace function public.chaine_affichage_of(p_user_id uuid, p_tz text, p_jour date)
+returns integer
+language sql
+stable
+set search_path = ''
+as $$
+  select (public.serie_etat(p_user_id, p_tz, p_jour)->>'serie')::integer;
+$$;

@@ -178,6 +178,7 @@ export function OnboardingFlow() {
             <Label htmlFor="pseudo">Pseudo</Label>
             <Input
               id="pseudo"
+              data-testid="onboarding-pseudo"
               value={pseudo}
               maxLength={PSEUDO_MAX}
               autoComplete="nickname"
@@ -201,6 +202,7 @@ export function OnboardingFlow() {
               <button
                 key={m}
                 type="button"
+                data-testid={`onboarding-budget-${m}`}
                 aria-pressed={budget === m}
                 onClick={() => setBudget(m)}
                 className={cn(
@@ -260,28 +262,30 @@ export function OnboardingFlow() {
       )}
 
       {step === "victoire" && mission && (
-        <Victoire mission={mission} gain={gain} envoi={envoi} onValider={validerPremiere} />
+        <div data-testid="onboarding-victoire">
+          <Victoire mission={mission} gain={gain} envoi={envoi} onValider={validerPremiere} />
+        </div>
       )}
 
       <footer className="flex items-center justify-between gap-3">
         {step !== "victoire" ? (
           <>
-            <Button type="button" variant="ghost" onClick={goBack} disabled={step === "identite"} className="text-muted-foreground">
+            <Button type="button" data-testid="onboarding-retour" variant="ghost" onClick={goBack} disabled={step === "identite"} className="text-muted-foreground">
               <ChevronLeft className="mr-1 size-4" aria-hidden />
               Retour
             </Button>
             {step === "recap" ? (
-              <Button type="button" onClick={commencer} disabled={envoi} className="h-11 px-6">
+              <Button type="button" data-testid="onboarding-commencer" onClick={commencer} disabled={envoi} className="h-11 px-6">
                 {envoi ? "Enregistrement…" : "Commencer"}
               </Button>
             ) : (
-              <Button type="button" onClick={goNext} className="h-11 px-6">
+              <Button type="button" data-testid="onboarding-continuer" onClick={goNext} className="h-11 px-6">
                 Continuer
               </Button>
             )}
           </>
         ) : gain ? (
-          <Button type="button" onClick={() => router.replace("/dashboard")} className="h-11 w-full">
+          <Button type="button" data-testid="onboarding-entrer" onClick={() => router.replace("/dashboard")} className="h-11 w-full">
             Entrer dans le System
           </Button>
         ) : null}
@@ -339,6 +343,8 @@ function EtapeCompetences({
               >
                 <button
                   type="button"
+                  data-testid="onboarding-competence"
+                  data-competence-id={c.id}
                   aria-pressed={Boolean(actif)}
                   onClick={() => onToggle(c.id)}
                   className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
@@ -404,7 +410,7 @@ function Victoire({
           {mission.duree_min} min · +{gain ? gain.xp : mission.xp_prevu} XP
         </p>
         {!gain && (
-          <Button type="button" onClick={onValider} disabled={envoi} className="mt-5 h-11 w-full">
+          <Button type="button" data-testid="onboarding-valider" onClick={onValider} disabled={envoi} className="mt-5 h-11 w-full">
             {envoi ? "Validation…" : "J'ai fait la mission : valider"}
           </Button>
         )}

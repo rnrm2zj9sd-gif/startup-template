@@ -52,10 +52,10 @@ export function SystemPanel({ className }: { className?: string }) {
           <div className="flex items-baseline justify-between gap-3">
             <p className="flex items-baseline gap-1.5">
               <span className="text-[10px] tracking-[0.28em] text-muted-foreground">NIV.</span>
-              <span className="font-mono text-xl font-light tabular-nums">{levelLabel}</span>
+              <span data-testid="player-level" data-value={profile.level} className="font-mono text-xl font-light tabular-nums">{levelLabel}</span>
             </p>
             <p className="text-[11px] tracking-[0.22em] text-muted-foreground">{profile.className}</p>
-            <p className="font-mono text-xs text-brand-gold">{profile.rank}</p>
+            <p data-testid="player-rank" data-value={profile.rank} className="font-mono text-xs text-brand-gold">{profile.rank}</p>
           </div>
 
           <div
@@ -78,7 +78,7 @@ export function SystemPanel({ className }: { className?: string }) {
               }
             />
           </div>
-          <p className="mt-1.5 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+          <p data-testid="player-xp" data-value={profile.xp} className="mt-1.5 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
             {formatXP(profile.xp)} / {formatXP(profile.xpNext)} XP
           </p>
         </div>

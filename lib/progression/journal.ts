@@ -13,6 +13,10 @@ export function texteJournal(l: JournalLigne): string {
       return `Niveau ${p.de} → ${p.vers}`;
     case "rang_obtenu":
       return `Rang ${p.vers} obtenu`;
+    case "serie_palier":
+      return `Série de ${p.jours} jours${p.nouveauRecord ? " · nouveau record" : ""}`;
+    case "bouclier_gagne":
+      return `Bouclier gagné (${p.boucliers}/2)`;
     default:
       return l.type;
   }

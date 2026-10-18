@@ -44,11 +44,12 @@ export function DevPasswordLogin({ nextPath }: { nextPath: string }) {
       <p className="text-sm text-muted-foreground">
         Uniquement en local. Crée tes comptes dans Supabase → Authentication → Users.
       </p>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form data-testid="login-form" onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="grid gap-2">
           <Label htmlFor="dev-email">E-mail</Label>
           <Input
             id="dev-email"
+            data-testid="login-email"
             type="email"
             autoComplete="username"
             required
@@ -61,6 +62,7 @@ export function DevPasswordLogin({ nextPath }: { nextPath: string }) {
           <Label htmlFor="dev-password">Mot de passe</Label>
           <Input
             id="dev-password"
+            data-testid="login-password"
             type="password"
             autoComplete="current-password"
             required
@@ -69,8 +71,8 @@ export function DevPasswordLogin({ nextPath }: { nextPath: string }) {
             disabled={loading}
           />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" variant="outline" disabled={loading}>
+        {error ? <p data-testid="login-error" className="text-sm text-destructive">{error}</p> : null}
+        <Button type="submit" data-testid="login-submit" variant="outline" disabled={loading}>
           {loading ? <Loader className="mr-2 size-4 animate-spin" aria-hidden /> : null}
           Entrer avec mot de passe
         </Button>

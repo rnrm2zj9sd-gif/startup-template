@@ -15,7 +15,7 @@ Une décision = une entrée. On ne réécrit pas une entrée : on en ajoute une 
 | D6 | Recaler le système existant plutôt qu'en créer un second | Appliqué · nettoyage en attente |
 | D7 | La base calcule, le TypeScript recopie la formule | Appliqué |
 | D8 | Économie d'XP au temps d'effort, plafond 400 XP/jour | Conservé · plafond à revoir |
-| D9 | Séries : boucliers + division par deux | Proposé, pas encore branché |
+| D9 | Séries : boucliers + division par deux | Appliqué (18/10/2026) |
 
 ---
 
@@ -168,7 +168,7 @@ Le test `scripts/tests/courbe-xp-sql.ts` compare les deux.
 
 ## D9 — Séries de jours : boucliers + division par deux
 
-**Statut :** proposé le 16/10/2026. Règle codée et testée dans un brouillon (11 tests réussis), mais **ni en base, ni dans l'app**. La règle actuelle reste active.
+**Statut :** appliqué le 18/10/2026. En base (`serie_depuis_jours`, `serie_etat`, `chaine_jours_of`, `chaine_affichage_of`) et dans l'app (`snapshot`, tuile SÉRIE, journal).
 
 **Règle actuelle (rejetée) :** un jour actif = au moins une mission qui rapporte de l'XP.
 Un jour manqué est toujours pardonné. À partir de 2 jours manqués, la série est divisée par deux, puis +1.
@@ -189,7 +189,7 @@ Elle a deux défauts :
 **Pourquoi :** le plancher de 3 missions quotidiennes garantit qu'il y a toujours quelque chose à faire, donc exiger des jours consécutifs est juste.
 Les boucliers absorbent les accidents de la vie. La division par deux fait baisser la série sans tout effacer.
 
-**Reste à faire :** valider la règle, puis la brancher en base (`chaine_jours_of`, `chaine_affichage_of`) et dans l'app (`lib/progression/snapshot.ts`, tuile SÉRIE, journal).
+**Reste à faire :** rien. Branchée.
 
 ---
 
@@ -198,6 +198,6 @@ Les boucliers absorbent les accidents de la vie. La division par deux fait baiss
 - [ ] Durée du rang S : 20,5 mois (K = 40), 12 mois (K = 24) ou 29 mois (K = 56) ?
 - [ ] Plafond journalier : 400 XP, ou environ 220 XP ?
 - [ ] Épreuves de rang dès la V1, ou en V2 ?
-- [ ] Séries : valider la règle D9 avant de la brancher.
+- [x] Séries : valider la règle D9.
 - [ ] Supprimer les 5 tables héritées (base + `supabase/schema`).
 - [ ] Titres et couleurs des rangs, à caler sur le design system bleu nuit.

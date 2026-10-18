@@ -31,6 +31,7 @@ export function CharacterPicker({ value, onChange, className }: CharacterPickerP
             key={option.value}
             type="button"
             role="radio"
+            data-testid={`gender-${option.value}`}
             aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={cn(

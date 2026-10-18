@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npx tsx --test test.ts lib/temps.test.ts lib/progression/progression.test.ts lib/planning/planning.test.ts scripts/tests/courbe-xp-sql.ts",
+    "test": "npx tsx --test test.ts lib/temps.test.ts lib/progression/progression.test.ts lib/progression/serie.test.ts lib/planning/planning.test.ts scripts/tests/courbe-xp-sql.ts scripts/tests/serie-sql.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ci": "CI=1 playwright test",
     "test:planning": "npx tsx scripts/tests/planning-spec.ts",
     "test:lot2": "npx tsx scripts/tests/lot2-isolation.ts",
     "test:lot3": "npx tsx scripts/tests/lot3-spec.ts",
@@ -45,6 +47,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
     "@types/react": "^18",

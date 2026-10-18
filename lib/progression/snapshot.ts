@@ -1,5 +1,5 @@
 import { jourLocal } from "@/lib/temps";
-import { chaineDepuisJours } from "./chaine";
+import { etatSerie } from "./serie";
 import { calculerClasse } from "./classe";
 import { CLASSE_FENETRE_JOURS, DISCIPLINE_JOURS, DOMAINE_AFFICHE, type DomaineAffiche } from "./config";
 import { indiceDeDiscipline } from "./discipline";
@@ -117,6 +117,7 @@ export function snapshotDepuisTables(input: {
   });
 
   const power = calculerPower({ niveauxDomaines, objectifsValides });
+  const serie = etatSerie(joursLedger, aujourdHui);
 
   return {
     xpTotal,
@@ -127,7 +128,8 @@ export function snapshotDepuisTables(input: {
     power,
     classe: calculerClasse({ missionsValidees, xp30jParDomaine: xp30j }),
     discipline,
-    chaineJours: chaineDepuisJours(joursLedger),
+    chaineJours: serie.serie,
+    serie,
     missionsValidees,
     xpParDomaine,
     niveauxDomaines,

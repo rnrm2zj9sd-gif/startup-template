@@ -1,5 +1,6 @@
 import type { Rank } from "@/types/player";
 import type { DomaineAffiche } from "./config";
+import type { SerieEtat } from "./serie";
 
 export type PlafondXp = "quotidien" | "perso" | null;
 
@@ -87,6 +88,7 @@ export type ProgressionSnapshot = {
   classe: string;
   discipline: number;
   chaineJours: number;
+  serie: SerieEtat;
   missionsValidees: number;
   xpParDomaine: Record<DomaineAffiche, number>;
   niveauxDomaines: Record<DomaineAffiche, number>;

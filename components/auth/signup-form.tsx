@@ -98,19 +98,20 @@ export function SignupForm() {
 
   if (checkEmail) {
     return (
-      <p className="rounded-2xl border border-border bg-panel p-5 text-sm text-muted-foreground">
+      <p data-testid="signup-check-email" className="rounded-2xl border border-border bg-panel p-5 text-sm text-muted-foreground">
         Compte enregistré. Confirme l&apos;e-mail si on te le demande, puis connecte-toi.
       </p>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-8">
+    <form data-testid="signup-form" onSubmit={onSubmit} className="flex flex-col gap-8">
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="name">Prénom</Label>
           <Input
             id="name"
+            data-testid="signup-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ton prénom"
@@ -124,6 +125,7 @@ export function SignupForm() {
           <Label htmlFor="email">E-mail</Label>
           <Input
             id="email"
+            data-testid="signup-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -139,6 +141,7 @@ export function SignupForm() {
           <Label htmlFor="password">Mot de passe</Label>
           <Input
             id="password"
+            data-testid="signup-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -152,6 +155,7 @@ export function SignupForm() {
           <Label htmlFor="password-confirm">Confirme le mot de passe</Label>
           <Input
             id="password-confirm"
+            data-testid="signup-password-confirm"
             type="password"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}
@@ -169,9 +173,9 @@ export function SignupForm() {
         <p className="text-xs text-muted-foreground">Modifiable plus tard dans Paramètres.</p>
       </fieldset>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p data-testid="signup-error" className="text-sm text-destructive">{error}</p> : null}
 
-      <Button type="submit" disabled={loading} className="h-10 bg-brand-purple text-white hover:bg-brand-purple/90">
+      <Button type="submit" data-testid="signup-submit" disabled={loading} className="h-10 bg-brand-purple text-white hover:bg-brand-purple/90">
         {loading && <Loader className="mr-2 size-4 animate-spin" aria-hidden />}
         Enregistrer mon mot de passe
       </Button>

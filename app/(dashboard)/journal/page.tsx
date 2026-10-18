@@ -49,7 +49,7 @@ export default function JournalPage() {
     <>
       <DashboardHeader title="Journal" description="Le System Log, du plus récent au plus ancien." />
 
-      <section className="rounded-2xl border border-border bg-card">
+      <section data-testid="journal" className="rounded-2xl border border-border bg-card">
         <h2 className="border-b border-border px-5 py-4 text-[11px] tracking-[0.3em] text-muted-foreground">
           SYSTEM LOG
         </h2>
@@ -60,7 +60,7 @@ export default function JournalPage() {
         ) : (
           <ol className="divide-y divide-border">
             {lignes.map((l) => (
-              <li key={l.id} className="flex items-baseline justify-between gap-3 px-5 py-2.5 text-sm" data-log-id={l.id}>
+              <li key={l.id} data-testid="journal-ligne" data-log-type={l.type} data-log-id={l.id} className="flex items-baseline justify-between gap-3 px-5 py-2.5 text-sm">
                 <span className={l.type === "xp_gagnee" ? "text-brand-gold" : ""}>{texteJournal(l)}</span>
                 <DateLabel iso={l.created_at} />
               </li>

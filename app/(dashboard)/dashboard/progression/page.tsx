@@ -112,7 +112,7 @@ export default function ProgressionPage() {
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="text-[11px] tracking-[0.3em] text-muted-foreground">ZONES</h2>
           <p className="font-mono text-xs tabular-nums text-muted-foreground">
-            Chaîne {etat.chaineJours} j
+            Chaîne {snap?.serie.serie ?? "—"} j
           </p>
         </div>
 

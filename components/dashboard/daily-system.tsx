@@ -66,7 +66,7 @@ export function DailySystem() {
   }
 
   return (
-    <div className="flex flex-col gap-5 md:gap-6">
+    <div data-testid="daily-system" className="flex flex-col gap-5 md:gap-6">
       <SystemPanel />
 
       <section aria-labelledby="missions-title" className="flex flex-col gap-4">
@@ -202,6 +202,11 @@ function MissionItem({
   return (
     <li data-mission-id={mission.id}>
       <article
+        data-testid="mission"
+        data-mission-id={mission.id}
+        data-type={mission.type}
+        data-statut={mission.statut}
+        data-xp={mission.xp_prevu}
         className={cn(
           "rounded-2xl border border-border bg-card p-5",
           done && "bg-card/60",
@@ -271,6 +276,7 @@ function MissionItem({
             </div>
             <Button
               type="button"
+              data-testid="mission-valider"
               disabled={envoi}
               onClick={() => run(() => onValider(mission, ressenti))}
               className="mt-4 h-12 w-full rounded-full text-sm shadow-none"
@@ -315,7 +321,7 @@ function DateLabel({ iso }: { iso: string }) {
 
 function Journal({ lignes }: { lignes: JournalLigne[] | null }) {
   return (
-    <section aria-labelledby="journal-title" className="rounded-2xl border border-border bg-card">
+    <section data-testid="journal" aria-labelledby="journal-title" className="rounded-2xl border border-border bg-card">
       <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <h2 id="journal-title" className="text-[11px] tracking-[0.3em] text-muted-foreground">
           SYSTEM LOG
@@ -331,7 +337,7 @@ function Journal({ lignes }: { lignes: JournalLigne[] | null }) {
       ) : (
         <ol className="divide-y divide-border">
           {lignes.map((l) => (
-            <li key={l.id} className="flex items-baseline justify-between gap-3 px-5 py-2.5 text-sm" data-log-type={l.type}>
+            <li key={l.id} data-testid="journal-ligne" data-log-type={l.type} className="flex items-baseline justify-between gap-3 px-5 py-2.5 text-sm">
               <span className={l.type === "xp_gagnee" ? "text-brand-gold" : ""}>{texteJournal(l)}</span>
               <DateLabel iso={l.created_at} />
             </li>

@@ -201,6 +201,9 @@ revoke all on function public._ps_xp_domaines(uuid) from public, anon, authentic
 revoke all on function public.xp_total_of(uuid) from public, anon, authenticated;
 revoke all on function public.chaine_jours_of(uuid, text, date) from public, anon, authenticated;
 revoke all on function public.chaine_affichage_of(uuid, text, date) from public, anon, authenticated;
+revoke all on function public.serie_depuis_jours(date[], date) from public, anon, authenticated;
+revoke all on function public.serie_etat(uuid, text, date) from public, anon, authenticated;
+revoke all on function public._serie_journal() from public, anon, authenticated;
 revoke all on function public.protect_profile_admin() from public, anon, authenticated;
 revoke all on function public.forbid_xp_ledger_update() from public, anon, authenticated;
 
@@ -257,6 +260,9 @@ select * from (values
     and not has_function_privilege('anon', 'public.xp_total_of(uuid)', 'EXECUTE')),
   ('droit', 'chaine fermée', not has_function_privilege('authenticated', 'public.chaine_jours_of(uuid, text, date)', 'EXECUTE')
     and not has_function_privilege('authenticated', 'public.chaine_affichage_of(uuid, text, date)', 'EXECUTE')),
+  ('fonction', 'serie_etat', exists (select 1 from pg_proc where proname = 'serie_etat')),
+  ('trigger', 'xp_ledger_serie', exists (select 1 from pg_trigger where tgname = 'xp_ledger_serie')),
+  ('droit', 'serie fermée', not has_function_privilege('authenticated', 'public.serie_etat(uuid, text, date)', 'EXECUTE')),
   ('table', 'calendar_events', exists (select 1 from pg_class where oid = 'public.calendar_events'::regclass)),
   ('fonction', 'terminer_evenement_calendrier', has_function_privilege('authenticated', 'public.terminer_evenement_calendrier(uuid, text)', 'EXECUTE')),
   ('droit', 'client sans statut calendrier', not has_column_privilege('authenticated', 'public.calendar_events', 'statut', 'UPDATE')),
